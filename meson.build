@@ -20,21 +20,13 @@ extensions = '--extensions='
 foreach extension : get_option('extensions')
   extensions += '@0@,'.format(extension)
 endforeach
-generator_command = [ find_program('tools/generate.py'), specification, api_version, extensions, '@INPUT@', '@OUTPUT@' ]
+generator_command = [ find_program('tools/generate.py'), specification, api_version, extensions, '@INPUT@',
+                      '@OUTPUT@' ]
 
 header = custom_target('header', command: generator_command, input: 'include/function_loader.hpp.in',
                        output: '@BASENAME@')
 source = custom_target('source', command: generator_command, input: 'src/function_loader.cpp.in',
                        output: '@BASENAME@')
-
-#
-#genloader = generator(find_program('tools/generate.py'),
-#                      arguments: [ specification, api_version, extensions, '@INPUT@', '@OUTPUT@' ],
-#                      output: '@BASENAME@')
-#
-#header = genloader.process(files('include/function_loader.hpp.in'))
-#source = genloader.process(files('src/function_loader.cpp.in'))
-#
 
 vulkan_function_loader_dep = declare_dependency(sources: [ header, source ])
 
