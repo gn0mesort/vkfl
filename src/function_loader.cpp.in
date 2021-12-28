@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace vk {
+namespace vkfl {
 
   function_loader::function_loader(const function_pointers::get_instance_proc_addr fn) {
     if (!fn)

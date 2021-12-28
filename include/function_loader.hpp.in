@@ -1,5 +1,5 @@
-#ifndef VULKAN_FUNCTION_LOADER_HPP
-#define VULKAN_FUNCTION_LOADER_HPP
+#ifndef VKFL_FUNCTION_LOADER_HPP
+#define VKFL_FUNCTION_LOADER_HPP
 
 /**
  * @file function_loader.hpp
@@ -26,7 +26,7 @@
 
 @undefs@
 
-namespace vk {
+namespace vkfl {
 namespace function_pointers {
 
   using any = PFN_vkVoidFunction;
