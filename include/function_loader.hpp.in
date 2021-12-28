@@ -27,7 +27,7 @@
 @undefs@
 
 namespace vkfl {
-namespace function_pointers {
+namespace function_pointer {
 
   using any = PFN_vkVoidFunction;
 @aliasfns@
@@ -55,7 +55,7 @@ namespace function_pointers {
   private:
     VkInstance m_loaded_instance{ VK_NULL_HANDLE };
     VkDevice m_loaded_device{ VK_NULL_HANDLE };
-    std::array<function_pointers::any, @commands_count@> m_pfns{ };
+    std::array<function_pointer::any, @commands_count@> m_pfns{ };
   public:
     /**
      * @brief Retrieve the `VK_HEADER_VERSION` that the `function_loader` was generated for.
@@ -70,7 +70,7 @@ namespace function_pointers {
      * @param fn The instance loader function to use when loader global functions.
      * @throws function_loader_error if `fn` is null.
      */
-    function_loader(const function_pointers::get_instance_proc_addr fn);
+    function_loader(const function_pointer::get_instance_proc_addr fn);
 
     /**
      * @brief Constructs a new `function_loader` using a previously created loader and the given Vulkan instance.
@@ -109,7 +109,7 @@ namespace function_pointers {
      * @returns A function pointer to the requested Vulkan command function or `nullptr` if the function pointer
      *          is not loaded.
      */
-    function_pointers::any operator()(const command cmd) const;
+    function_pointer::any operator()(const command cmd) const;
 
     /**
      * @brief Moves the state of one `function_loader` to another.
@@ -159,7 +159,7 @@ namespace function_pointers {
      * @returns A function pointer to the requested Vulkan command function or `nullptr` if the function pointer
      *          is not loaded.
      */
-    function_pointers::any get(const command cmd) const;
+    function_pointer::any get(const command cmd) const;
   };
 
 }

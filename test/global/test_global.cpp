@@ -4,7 +4,7 @@
 
 #include "function_loader.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointers::cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::function_loader{ vkGetInstanceProcAddr };
