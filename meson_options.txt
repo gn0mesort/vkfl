@@ -1,0 +1,4 @@
+option('api', type: 'string', value: 'latest', description: 'The Vulkan API version to generate.')
+option('extensions', type: 'array', value: [ 'all' ], description: 'A set of Vulkan extensions to include.')
+option('specification', type: 'string', value: 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml',
+       description: 'A path indicating the location of the desired Vulkan specification (XML) to generate a loader from.')

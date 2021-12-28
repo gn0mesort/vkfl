@@ -1,0 +1,70 @@
+#include "function_loader.hpp"
+
+#include <utility>
+
+namespace vk {
+
+  function_loader::function_loader(const function_pointers::get_instance_proc_addr fn) {
+    if (!fn)
+    {
+      throw function_loader_error{ "Cannot load functions with a null function_loader function." };
+    }
+    auto context_loader = fn;
+@load_global@
+    m_pfns[static_cast<std::size_t>(command::get_instance_proc_addr)] = reinterpret_cast<function_pointers::any>(fn);
+  }
+
+  function_loader::function_loader(function_loader&& other, const VkInstance context) :
+  function_loader(std::move(other)) {
+    load(context);
+  }
+
+
+  function_loader::function_loader(function_loader&& other, const VkDevice context) :
+  function_loader(std::move(other)) {
+    load(context);
+  }
+
+  VkInstance function_loader::loaded_instance() const {
+    return m_loaded_instance;
+  }
+
+  VkDevice function_loader::loaded_device() const {
+    return m_loaded_device;
+  }
+
+  function_loader& function_loader::load(const VkInstance context) {
+    using namespace function_pointers;
+    if (context == VK_NULL_HANDLE)
+    {
+      throw function_loader_error{ "Cannot load functions from a null Vulkan instance." };
+    }
+    auto context_loader = reinterpret_cast<get_instance_proc_addr>(get(command::get_instance_proc_addr));
+@load_instance@
+@load_device@
+    m_loaded_instance = context;
+    m_loaded_device = VK_NULL_HANDLE;
+    return *this;
+  }
+
+  function_loader& function_loader::load(const VkDevice context) {
+    using namespace function_pointers;
+    if (context == VK_NULL_HANDLE)
+    {
+      throw function_loader_error{ "Cannot load functions from a null Vulkan device." };
+    }
+    auto context_loader = reinterpret_cast<get_device_proc_addr>(get(command::get_device_proc_addr));
+@load_device@
+    m_loaded_device = context;
+    return *this;
+  }
+
+  function_pointers::any function_loader::get(const command cmd) const {
+    return m_pfns[static_cast<std::size_t>(cmd)];
+  }
+
+  function_pointers::any function_loader::operator()(const command cmd) const {
+    return get(cmd);
+  }
+
+}
