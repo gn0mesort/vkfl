@@ -15,13 +15,23 @@ namespace vkfl {
   }
 
   function_loader::function_loader(function_loader&& other, const VkInstance context) :
-  function_loader(std::move(other)) {
+  function_loader{ std::move(other) } {
     load(context);
   }
 
 
   function_loader::function_loader(function_loader&& other, const VkDevice context) :
-  function_loader(std::move(other)) {
+  function_loader{ std::move(other) } {
+    load(context);
+  }
+
+  function_loader::function_loader(const function_loader& other, const VkInstance context) :
+  function_loader{ other } {
+    load(context);
+  }
+
+  function_loader::function_loader(const function_loader& other, const VkDevice context) :
+  function_loader{ other } {
     load(context);
   }
 
@@ -40,6 +50,10 @@ namespace vkfl {
       throw function_loader_error{ "Cannot load functions from a null Vulkan instance." };
     }
     auto context_loader = reinterpret_cast<get_instance_proc_addr>(get(command::get_instance_proc_addr));
+    if (!context_loader)
+    {
+      throw function_loader_error{ "Function pointer for vkGetInstanceProcAddr is null." };
+    }
 @load_instance@
 @load_device@
     m_loaded_instance = context;
@@ -54,6 +68,10 @@ namespace vkfl {
       throw function_loader_error{ "Cannot load functions from a null Vulkan device." };
     }
     auto context_loader = reinterpret_cast<get_device_proc_addr>(get(command::get_device_proc_addr));
+    if (!context_loader)
+    {
+      throw function_loader_error{ "Function pointer for vkGetDeviceProcAddr is null." };
+    }
 @load_device@
     m_loaded_device = context;
     return *this;

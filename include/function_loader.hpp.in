@@ -88,11 +88,16 @@ namespace function_pointer {
      */
     function_loader(function_loader&& other, const VkDevice context);
 
+    function_loader(const function_loader& other, const VkInstance);
+    function_loader(const function_loader& other, const VkDevice);
+
     /**
      * @brief Constructs a new `function_loader` by moving a previously created loader.
      * @param other The `function_loader` to move.
      */
     function_loader(function_loader&& other) = default;
+
+    function_loader(const function_loader& other) = default;
 
     /**
      * @brief Destroys a `function_loader`.
@@ -117,6 +122,8 @@ namespace function_pointer {
      * @returns A reference to the updated `function_loader`.
      */
     function_loader& operator=(function_loader&& rhs) = default;
+
+    function_loader& operator=(const function_loader& rhs) = default;
 
     /**
      * @brief Load instance-level Vulkan function pointers.
