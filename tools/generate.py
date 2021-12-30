@@ -62,7 +62,7 @@ def global_loader_str(commands_by_requirement):
         commands = commands_by_requirement[requirement]
         cmd_count = 0
         for command in commands:
-            if command['loaded_from'] == 'global':
+            if command['loaded_from'] == 'global' and command['name'] != 'vkGetInstanceProcAddr':
                 name = command['name']
                 tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{to_snake_case(name)[3:]})] = '
                 tmp += f'context_loader(VK_NULL_HANDLE, "{name}");{os.linesep}'
