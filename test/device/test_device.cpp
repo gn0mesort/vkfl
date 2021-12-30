@@ -9,7 +9,7 @@
 #define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
 
 int main() {
-  auto ld = vkfl::function_loader{ vkGetInstanceProcAddr };
+  auto ld = vkfl::loader{ vkGetInstanceProcAddr };
   auto app_info = VkApplicationInfo{ };
   std::memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -34,7 +34,7 @@ int main() {
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
   }
-  ld = vkfl::function_loader{ std::move(ld), instance };
+  ld.load(instance);
   auto device_info = VkDeviceCreateInfo{ };
   std::memset(&device_info, 0, sizeof(VkDeviceCreateInfo));
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -54,7 +54,7 @@ int main() {
     assert(res == VK_SUCCESS);
   }
   auto old_pfn = VKFL_GET_PFN(ld, cmd_draw);
-  ld = vkfl::function_loader{ std::move(ld), device };
+  ld.load(device);
   auto new_pfn = VKFL_GET_PFN(ld, cmd_draw);
   assert(new_pfn != nullptr);
   assert(new_pfn != old_pfn);

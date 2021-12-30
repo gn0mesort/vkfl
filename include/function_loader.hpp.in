@@ -27,6 +27,9 @@
 @undefs@
 
 namespace vkfl {
+/**
+ * @brief A namespace containing snake_case aliases of various Vulkan PFN_vk* pointers.
+ */
 namespace function_pointer {
 
   using any = PFN_vkVoidFunction;
@@ -34,9 +37,9 @@ namespace function_pointer {
 
 }
   /**
-   * @brief An exception type thrown by `function_loader` methods.
+   * @brief An exception type thrown by `loader` methods.
    */
-  class function_loader_error final : std::runtime_error {
+  class error final : std::runtime_error {
   public:
     using std::runtime_error::runtime_error;
   };
@@ -49,124 +52,141 @@ namespace function_pointer {
   };
 
   /**
-   * @brief A class for loading Vulkan command function pointers at runtime.
+   * @brief Vulkan function pointer loader implementation.
+   *
+   * The loader is fairly simple in concept. Function pointers are loaded in three stages. First, when a new loader is
+   * created globally available function pointers are loaded. Second, when `loader::load(const VkInstance)` is called
+   * instance level function pointers are loaded. Third, when `loader::load(const VkDevice)` is called device level
+   * function pointers are loaded. During instance level loading the instance level copies of device level function
+   * pointers are loaded as well.
+   *
+   * Note that this loader does not have functionality to dynamically link libvulkan. The initial global loader
+   * function pointer must be resolved some other way.
+   *
+   * Also note that this loader does not take ownership of `VkInstance` or `VkDevice` handles passed to it. If either
+   * the instance of device are destroyed before the loader these may no longer be valid handles.
    */
-  class function_loader final {
+  class loader final {
   private:
     VkInstance m_loaded_instance{ VK_NULL_HANDLE };
     VkDevice m_loaded_device{ VK_NULL_HANDLE };
     std::array<function_pointer::any, @commands_count@> m_pfns{ };
   public:
     /**
-     * @brief Retrieve the `VK_HEADER_VERSION` that the `function_loader` was generated for.
-     * @returns The header version (e.g. 202).
+     * @brief Get the VK_HEADER_VERSION from which this loader was built.
+     * @returns an integer representing the header version (e.g. 203).
      */
     static constexpr std::uint32_t header_version() {
       return @header_version@;
     }
 
     /**
-     * @brief Constructs a new `function_loader` and loads the globally available Vulkan function pointers.
-     * @param fn The instance loader function to use when loader global functions.
-     * @throws function_loader_error if `fn` is null.
-     */
-    function_loader(const function_pointer::get_instance_proc_addr fn);
-
-    /**
-     * @brief Constructs a new `function_loader` using a previously created loader and the given Vulkan instance.
-     * @param other A valid `function_loader`.
-     * @param context A valid Vulkan instance from which instance-level function pointers will be loaded.
-     * @throws function_loader_error if `context` is `VK_NULL_HANDLE`.
-     */
-    function_loader(function_loader&& other, const VkInstance context);
-
-    /**
-     * @brief Constructs a new `function_loader` using a previously created loader and the given Vulkan device.
-     * @param other A valid `function_loader` loaded with at least instance-level function pointers.
-     * @param context A valid Vulkan device from which device-level function pointers will be loaded.
-     * @throws function_loader_error if `context` is `VK_NULL_HANDLE`.
-     */
-    function_loader(function_loader&& other, const VkDevice context);
-
-    function_loader(const function_loader& other, const VkInstance);
-    function_loader(const function_loader& other, const VkDevice);
-
-    /**
-     * @brief Constructs a new `function_loader` by moving a previously created loader.
-     * @param other The `function_loader` to move.
-     */
-    function_loader(function_loader&& other) = default;
-
-    function_loader(const function_loader& other) = default;
-
-    /**
-     * @brief Destroys a `function_loader`.
-     */
-    ~function_loader() noexcept = default;
-
-    /**
-     * @brief Retrieves the Vulkan function pointer associated with a given Vulkan command.
+     * @brief Constructs a new `loader` object and loads the global Vulkan function pointers.
      *
-     * When function pointers have yet to be loaded or if they are simply not available this will return a null
-     * pointer.
+     * The function pointer passed to this constructor only needs the correct signature. It doesn't matter whether it
+     * is a pointer to a static `vkGetInstanceProcAddr` function, the result of a call to `dlsym`, or something else.
+     * It is an error to construct a `loader` with a null loader function pointer.
      *
-     * @param cmd The Vulkan command to retrieve.
-     * @returns A function pointer to the requested Vulkan command function or `nullptr` if the function pointer
-     *          is not loaded.
+     * @param global A pointer to a valid Vulkan instance loader function.
+     * @throws error If global is null.
+     */
+    loader(const function_pointer::get_instance_proc_addr global);
+
+    /**
+     * @brief Constructs a copy of the input `loader`.
+     * @param other The `loader` to copy.
+     */
+    loader(const loader& other) = default;
+
+    /**
+     * @brief Moves a `loader`.
+     * @param other The `loader` to move.
+     */
+    loader(loader&& other) = default;
+
+    /**
+     * @brief Destroys a `loader`.
+     */
+    ~loader() noexcept = default;
+
+    /**
+     * @brief Copy one `loader` into another `loader`.
+     * @param rhs The `loader` to copy.
+     */
+    loader& operator=(const loader& rhs) = default;
+
+    /**
+     * @brief Move one `loader` into another `loader`.
+     * @param rhs The `loader` to move.
+     */
+    loader& operator=(loader&& rhs) = default;
+
+    /**
+     * @brief Resolve a Vulkan command into a function pointer.
+     *
+     * Note that the results of this method are ambiguous function pointers (i.e. pointers of the type
+     * `function_pointer::any` which itself is an alias of `PFN_vkVoidFunction`). Before using the pointers returned by
+     * this method they must be cast to the correct type.
+     *
+     * Additionally, no attempt is made to check for null pointers. A pointer may be null either because it has not
+     * been loaded or because it is part of an extension that isn't enabled/available.
+     *
+     * @param cmd The Vulkan command to retrieve a function pointer for.
+     * @returns A pointer to the desired Vulkan command function or null.
      */
     function_pointer::any operator()(const command cmd) const;
 
     /**
-     * @brief Moves the state of one `function_loader` to another.
-     * @param rhs The `function_loader` to move.
-     * @returns A reference to the updated `function_loader`.
-     */
-    function_loader& operator=(function_loader&& rhs) = default;
-
-    function_loader& operator=(const function_loader& rhs) = default;
-
-    /**
-     * @brief Load instance-level Vulkan function pointers.
+     * @brief Resolve a Vulkan command into a function pointer.
      *
-     * Loading instance-level pointers overwrites device-level pointers. As a result this will unload any device that
-     * was previously loaded.
+     * Note that the results of this method are ambiguous function pointers (i.e. pointers of the type
+     * `function_pointer::any` which itself is an alias of `PFN_vkVoidFunction`). Before using the pointers returned by
+     * this method they must be cast to the correct type.
      *
-     * @param context A valid Vulkan instance from which instance-level function pointers will be loaded.
-     * @throws function_loader_error if `context` is `VK_NULL_HANDLE`.
+     * Additionally, no attempt is made to check for null pointers. A pointer may be null either because it has not
+     * been loaded or because it is part of an extension that isn't enabled/available.
+     *
+     * @param cmd The Vulkan command to retrieve a function pointer for.
+     * @returns A pointer to the desired Vulkan command function or null.
      */
-    function_loader& load(const VkInstance context);
+    function_pointer::any get(const command) const;
 
     /**
-     * @brief Load device-level Vulkan function pointers.
-     * @param context A valid Vulkan device from which device-level function pointers will be loaded.
-     * @throws function_loader_error if `context` is `VK_NULL_HANDLE`.
+     * @brief Load instance level function pointers.
+     *
+     * This method will load instance level pointers for both instance and device commands.
+     *
+     * Note that calling this method after loading device level pointers will overwrite those pointers with their
+     * instance level equivalents.
+     *
+     * @param context A Vulkan instance from which instance level pointers can be loaded.
+     * @returns A reference to the `loader`.
+     * @throws error If context is null.
      */
-    function_loader& load(const VkDevice context);
+    loader& load(const VkInstance context);
 
     /**
-     * @brief Retrieve the currently loaded Vulkan instance.
-     * @returns The Vulkan instance provided to the latest call to `load()` or `VK_NULL_HANDLE` if no instance is
-     *          loaded.
+     * @brief Load device level function pointers.
+     *
+     * @param context A Vulkan device from which device level pointers can be loaded.
+     * @returns A reference to the `loader`.
+     * @throws error If context is null.
+     */
+    loader& load(const VkDevice context);
+
+    /**
+     * @brief Get the `VkInstance` handle of the currently loaded instance.
+     *
+     * @returns The currently loaded `VkInstance` or a null handle if no instance is loaded.
      */
     VkInstance loaded_instance() const;
 
     /**
-     * @brief Retrieve the currently loaded Vulkan device.
-     * @returns The Vulkan device provided to the latest call to `load()` or `VK_NULL_HANDLE` if no device is loaded.
+     * @brief Get the `VkDevice` handle of the currently loaded device.
+     *
+     * @returns The currently loaded `VkDevice` or a null handle if no device is loaded.
      */
     VkDevice loaded_device() const;
-
-    /**
-     * @brief Retrieves the Vulkan function pointer associated with a given Vulkan command.
-     *
-     * When function pointers have yet to be loaded or if they are simply not available this will return a null
-     * pointer.
-     *
-     * @param cmd The Vulkan command to retrieve.
-     * @returns A function pointer to the requested Vulkan command function or `nullptr` if the function pointer
-     *          is not loaded.
-     */
-    function_pointer::any get(const command cmd) const;
   };
 
 }
