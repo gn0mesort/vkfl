@@ -1,10 +1,11 @@
-#ifndef VKFL_FUNCTION_LOADER_HPP
-#define VKFL_FUNCTION_LOADER_HPP
+#ifndef VKFL_HPP
+#define VKFL_HPP
 
 /**
  * @file function_loader.hpp
  * @author Alexander Rothman <gnomesort@megate.ch>
  * @date December 27, 2021
+ * @copyright LGPL-3.0
  * @brief Dynamic Vulkan function pointer loader.
  *
  * This is intended to be a low-level component and so very few checks are made to ensure proper operation. Care should
@@ -27,6 +28,7 @@
 @undefs@
 
 namespace vkfl {
+
 /**
  * @brief A namespace containing snake_case aliases of various Vulkan PFN_vk* pointers.
  */
@@ -170,7 +172,7 @@ namespace function_pointer {
      *
      * @param context A Vulkan device from which device level pointers can be loaded.
      * @returns A reference to the `loader`.
-     * @throws error If context is null.
+     * @throws error If context is null or if no instance is loaded.
      */
     loader& load(const VkDevice context);
 

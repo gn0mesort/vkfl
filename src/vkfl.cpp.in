@@ -1,0 +1,63 @@
+#include "vkfl.hpp"
+
+#include <utility>
+
+namespace vkfl {
+  loader::loader(const function_pointer::get_instance_proc_addr global) {
+    if (!global)
+    {
+      throw error{ "The global loader function must not be null." };
+    }
+    const auto context_loader = global;
+@load_global@
+    constexpr auto idx = static_cast<std::size_t>(command::get_instance_proc_addr);
+    m_pfns[idx] = reinterpret_cast<function_pointer::any>(global);
+  }
+
+  function_pointer::any loader::get(const command cmd) const {
+    return m_pfns[static_cast<std::size_t>(cmd)];
+  }
+
+  function_pointer::any loader::operator()(const command cmd) const {
+    return get(cmd);
+  }
+
+  loader& loader::load(const VkInstance context) {
+    if (context == VK_NULL_HANDLE)
+    {
+      throw error{ "The instance handle must not be null." };
+    }
+    constexpr auto idx = static_cast<std::size_t>(command::get_instance_proc_addr);
+    const auto context_loader = reinterpret_cast<function_pointer::get_instance_proc_addr>(m_pfns[idx]);
+@load_instance@
+@load_device@
+    m_loaded_instance = context;
+    m_loaded_device = VK_NULL_HANDLE;
+    return *this;
+  }
+
+  loader& loader::load(const VkDevice context) {
+    if (context == VK_NULL_HANDLE)
+    {
+      throw error{ "The device handle must not be null." };
+    }
+    if (m_loaded_instance == VK_NULL_HANDLE)
+    {
+      throw error{ "A matching instance must be loaded before loading a device." };
+    }
+    constexpr auto idx = static_cast<std::size_t>(command::get_device_proc_addr);
+    const auto context_loader = reinterpret_cast<function_pointer::get_device_proc_addr>(m_pfns[idx]);
+@load_device@
+    m_loaded_device = context;
+    return *this;
+  }
+
+  VkInstance loader::loaded_instance() const {
+    return m_loaded_instance;
+  }
+
+  VkDevice loader::loaded_device() const {
+    return m_loaded_device;
+  }
+
+}

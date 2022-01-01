@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "function_loader.hpp"
+#include "vkfl.hpp"
 
 #define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
 

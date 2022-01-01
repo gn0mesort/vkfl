@@ -1,5 +1,5 @@
 project(
-  'vulkan-function-loader',
+  'vkfl',
   [ 'c', 'cpp' ],
   version: '1.0.0',
   license: 'LGPL-3.0',
@@ -23,11 +23,11 @@ endforeach
 generator_command = [ find_program('tools/generate.py'), specification, api_version, extensions, '@INPUT@',
                       '@OUTPUT@' ]
 
-header = custom_target('header', command: generator_command, input: 'include/function_loader.hpp.in',
+header = custom_target('header', command: generator_command, input: 'include/vkfl.hpp.in',
                        output: '@BASENAME@')
-source = custom_target('source', command: generator_command, input: 'src/function_loader.cpp.in',
+source = custom_target('source', command: generator_command, input: 'src/vkfl.cpp.in',
                        output: '@BASENAME@')
 
-vulkan_function_loader_dep = declare_dependency(sources: [ header, source ])
+vkfl_dep = declare_dependency(sources: [ header, source ], dependencies: dependency('vulkan'))
 
 subdir('test')
