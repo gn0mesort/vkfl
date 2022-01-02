@@ -41,12 +41,12 @@ def identify_group(vktypes, command):
 def commands_str(commands_by_requirement):
     result = ''
     for requirement in commands_by_requirement:
-        result += f'#if {requirement}{os.linesep}'
+        # result += f'#if {requirement}{os.linesep}'
         commands = commands_by_requirement[requirement]
         for command in commands:
             name = command['name']
-            result += f'\t\t{to_snake_case(name)[3:]},{os.linesep}'
-        result += f'#endif{os.linesep}'
+            result += f'\t\t{name[2:]},{os.linesep}'
+        # result += f'#endif{os.linesep}'
     return result.strip().expandtabs(2)
 
 def command_count_str(commands_by_requirement):
@@ -58,16 +58,17 @@ def command_count_str(commands_by_requirement):
 def global_loader_str(commands_by_requirement):
     result = ''
     for requirement in commands_by_requirement:
-        tmp = f'#if {requirement}{os.linesep}'
+        # tmp = f'#if {requirement}{os.linesep}'
+        tmp = ''
         commands = commands_by_requirement[requirement]
         cmd_count = 0
         for command in commands:
             if command['loaded_from'] == 'global' and command['name'] != 'vkGetInstanceProcAddr':
                 name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{to_snake_case(name)[3:]})] = '
-                tmp += f'context_loader(VK_NULL_HANDLE, "{name}");{os.linesep}'
+                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
+                tmp += f'context_loader(nullptr, "{name}");{os.linesep}'
                 cmd_count += 1
-        tmp += f'#endif{os.linesep}'
+        # tmp += f'#endif{os.linesep}'
         if cmd_count > 0:
             result += tmp
     return result.rstrip().expandtabs(2)
@@ -75,16 +76,16 @@ def global_loader_str(commands_by_requirement):
 def instance_loader_str(commands_by_requirement):
     result = ''
     for requirement in commands_by_requirement:
-        tmp = f'#if {requirement}{os.linesep}'
+        tmp = '' # f'#if {requirement}{os.linesep}'
         commands = commands_by_requirement[requirement]
         cmd_count = 0
         for command in commands:
             if command['loaded_from'] == 'instance':
                 name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{to_snake_case(name)[3:]})] = '
+                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
                 tmp += f'context_loader(context, "{name}");{os.linesep}'
                 cmd_count += 1
-        tmp += f'#endif{os.linesep}'
+        # tmp += f'#endif{os.linesep}'
         if cmd_count > 0:
             result += tmp
     return result.rstrip().expandtabs(2)
@@ -92,16 +93,16 @@ def instance_loader_str(commands_by_requirement):
 def device_loader_str(commands_by_requirement):
     result = ''
     for requirement in commands_by_requirement:
-        tmp = f'#if {requirement}{os.linesep}'
+        tmp = '' # f'#if {requirement}{os.linesep}'
         commands = commands_by_requirement[requirement]
         cmd_count = 0
         for command in commands:
             if command['loaded_from'] == 'device':
                 name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{to_snake_case(name)[3:]})] = '
+                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
                 tmp += f'context_loader(context, "{name}");{os.linesep}'
                 cmd_count += 1
-        tmp += f'#endif{os.linesep}'
+        # tmp += f'#endif{os.linesep}'
         if cmd_count > 0:
             result += tmp
     return result.rstrip().expandtabs(2)

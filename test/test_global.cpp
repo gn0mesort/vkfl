@@ -4,10 +4,10 @@
 
 #include "vkfl.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
-  assert(VKFL_GET_PFN(ld, create_instance) != nullptr);
+  assert(VKFL_GET_PFN(ld, CreateInstance) != nullptr);
   return 0;
 }

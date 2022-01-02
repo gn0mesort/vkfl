@@ -6,7 +6,7 @@
 
 #include "vkfl.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
@@ -15,7 +15,7 @@ int main() {
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   {
 #if defined(VK_VERSION_1_1)
-    auto pfn = VKFL_GET_PFN(ld, enumerate_instance_version);
+    auto pfn = VKFL_GET_PFN(ld, EnumerateInstanceVersion);
     assert(pfn != nullptr);
     auto res = pfn(&app_info.apiVersion);
     assert(res == VK_SUCCESS);
@@ -29,7 +29,7 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   auto instance = VkInstance{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, create_instance);
+    auto pfn = VKFL_GET_PFN(ld, CreateInstance);
     assert(pfn != nullptr);
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
@@ -40,7 +40,7 @@ int main() {
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   auto pdev = VkPhysicalDevice{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, enumerate_physical_devices);
+    auto pfn = VKFL_GET_PFN(ld, EnumeratePhysicalDevices);
     assert(pfn != nullptr);
     auto sz = std::uint32_t{ 1 };
     auto res = pfn(instance, &sz, &pdev);
@@ -48,14 +48,14 @@ int main() {
   }
   auto device = VkDevice{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, create_device);
+    auto pfn = VKFL_GET_PFN(ld, CreateDevice);
     assert(pfn != nullptr);
     auto res = pfn(pdev, &device_info, nullptr, &device);
     assert(res == VK_SUCCESS);
   }
-  auto old_pfn = VKFL_GET_PFN(ld, cmd_draw);
+  auto old_pfn = VKFL_GET_PFN(ld, CmdDraw);
   ld.load(device);
-  auto new_pfn = VKFL_GET_PFN(ld, cmd_draw);
+  auto new_pfn = VKFL_GET_PFN(ld, CmdDraw);
   assert(new_pfn != nullptr);
   assert(new_pfn != old_pfn);
   return 0;

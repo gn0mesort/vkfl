@@ -20,4 +20,4 @@ meson build
 ninja -C build
 ```
 
-Once this is done, you can copy the resulting `function_loader.hpp` and `function_loader.cpp` files wherever you like.
+Once this is done, you can copy the resulting `vkfl.hpp` and `vkfl.cpp` files wherever you like.

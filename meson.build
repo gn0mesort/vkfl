@@ -28,6 +28,6 @@ header = custom_target('header', command: generator_command, input: 'include/vkf
 source = custom_target('source', command: generator_command, input: 'src/vkfl.cpp.in',
                        output: '@BASENAME@')
 
-vkfl_dep = declare_dependency(sources: [ header, source ], dependencies: dependency('vulkan'))
+vkfl_dep = declare_dependency(sources: [ header, source ])
 
 subdir('test')

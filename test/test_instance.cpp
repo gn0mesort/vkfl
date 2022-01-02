@@ -5,7 +5,7 @@
 
 #include "vkfl.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<vkfl::function_pointer::cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
@@ -14,7 +14,7 @@ int main() {
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   {
 #if defined(VK_VERSION_1_1)
-    auto pfn = VKFL_GET_PFN(ld, enumerate_instance_version);
+    auto pfn = VKFL_GET_PFN(ld, EnumerateInstanceVersion);
     assert(pfn != nullptr);
     auto res = pfn(&app_info.apiVersion);
     assert(res == VK_SUCCESS);
@@ -28,13 +28,13 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   auto instance = VkInstance{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, create_instance);
+    auto pfn = VKFL_GET_PFN(ld, CreateInstance);
     assert(pfn != nullptr);
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
   }
   ld.load(instance);
-  assert(VKFL_GET_PFN(ld, get_device_proc_addr) != nullptr);
-  assert(VKFL_GET_PFN(ld, get_device_queue) != nullptr);
+  assert(VKFL_GET_PFN(ld, GetDeviceProcAddr) != nullptr);
+  assert(VKFL_GET_PFN(ld, GetDeviceQueue) != nullptr);
   return 0;
 }
