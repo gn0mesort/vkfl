@@ -1,4 +1,3 @@
-vulkan_dep = dependency('vulkan', disabler: true)
 if vulkan_dep.found()
   test_global_exe = executable('global-function-load', files('test_global.cpp'),
                                dependencies: [ vkfl_dep, vulkan_dep ])
@@ -11,4 +10,3 @@ if vulkan_dep.found()
                                dependencies: [ vkfl_dep, vulkan_dep ])
   test('device-function-load', test_device_exe)
 endif
-

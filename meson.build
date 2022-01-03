@@ -30,4 +30,7 @@ source = custom_target('source', command: generator_command, input: 'src/vkfl.cp
 
 vkfl_dep = declare_dependency(sources: [ header, source ])
 
+vulkan_dep = dependency('vulkan', required: false, disabler: true)
+
 subdir('test')
+subdir('examples')

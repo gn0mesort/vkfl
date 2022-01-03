@@ -62,6 +62,13 @@ def defines_str(apis, exts):
     result += f'#define VKFL_BUILD_TIME {time.hour}{time.minute:02}{time.second:02}ULL{os.linesep}'
     return result.rstrip()
 
+def private_defines_str(global_commands, instance_commands, device_commands):
+    result = ''
+    result += f'#define VKFL_GLOBAL_MAX {len(global_commands)}{os.linesep}'
+    result += f'#define VKFL_INSTANCE_MAX (VKFL_GLOBAL_MAX + {len(instance_commands)}){os.linesep}'
+    result += f'#define VKFL_DEVICE_MAX (VKFL_INSTANCE_MAX + {len(device_commands)})'
+    return result.rstrip()
+
 def loader_str(commands):
     result = ''
     for command in commands:
@@ -146,8 +153,9 @@ for vk_command in vk_commands:
             vk_instance_commands.append(command)
         elif command['loaded_from'] == LD_DEVICE:
             vk_device_commands.append(command)
-vk_all_commands = vk_global_commands + vk_instance_commands + vk_device_commands
-vk_all_commands = sorted(vk_all_commands, key=lambda command: command['name'])
+key_fn = lambda command: command['name']
+vk_all_commands = sorted(vk_global_commands, key=key_fn) + sorted(vk_instance_commands, key=key_fn)
+vk_all_commands += sorted(vk_device_commands, key=key_fn)
 text = ''
 with open(args.INPUT, 'rb') as file:
     text = str(file.read(), 'utf-8')
@@ -158,6 +166,8 @@ text = text.replace('@load_global@', loader_str(vk_global_commands))
 text = text.replace('@load_instance@', loader_str(vk_instance_commands))
 text = text.replace('@load_device@', loader_str(vk_device_commands))
 text = text.replace('@defines@', defines_str(apis, exts))
+text = text.replace('@private_defines@', private_defines_str(vk_global_commands, vk_instance_commands,
+                                                             vk_device_commands))
 with open(args.OUTPUT, 'wb') as file:
     file.truncate()
     file.write(bytes(text, 'utf-8'))

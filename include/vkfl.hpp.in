@@ -96,6 +96,10 @@ namespace vkfl {
     VkInstance m_loaded_instance{ nullptr };
     VkDevice m_loaded_device{ nullptr };
     std::array<any_fn, @commands_count@> m_pfns{ };
+
+    void load_instance_fns(const VkInstance context);
+    void load_device_fns(const VkInstance context);
+    void load_device_fns(const VkDevice context);
   public:
     /**
      * @brief Get the VK_HEADER_VERSION from which this loader was built.
@@ -212,6 +216,28 @@ namespace vkfl {
      * @returns The currently loaded `VkDevice` or a null handle if no device is loaded.
      */
     VkDevice loaded_device() const;
+
+    /**
+     * @brief Unload device level function pointers.
+     *
+     * This will reload the instance level equivalents of all device level pointers. Therefore this is equivalent to:
+     *
+     * `ld.load(ld.loaded_instance())`
+     *
+     * @returns A reference to the `loader`.
+     */
+    loader& unload_device();
+
+    /**
+     * @brief Unload instance level function pointers.
+     *
+     * As it is impossible to have a valid `VkDevice` without a corresponding instance this will clear any device level
+     * functionality as well. Essentially, this method reverts the loader to the state it was in immediately after
+     * construction.
+     *
+     * @returns A reference to the `loader`.
+     */
+    loader& unload_instance();
   };
 
 }

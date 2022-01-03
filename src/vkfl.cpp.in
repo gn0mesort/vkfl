@@ -8,7 +8,27 @@
 
 #include "vkfl.hpp"
 
+@private_defines@
+
 namespace vkfl {
+  void loader::load_instance_fns(const VkInstance context) {
+    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
+    const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
+@load_instance@
+  }
+
+  void loader::load_device_fns(const VkInstance context) {
+    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
+    const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
+@load_device@
+  }
+
+  void loader::load_device_fns(const VkDevice context) {
+    constexpr auto idx = static_cast<std::size_t>(command::GetDeviceProcAddr);
+    const auto context_loader = reinterpret_cast<get_device_proc_addr_fn>(m_pfns[idx]);
+@load_device@
+  }
+
   loader::loader(const get_instance_proc_addr_fn global) {
     if (!global)
     {
@@ -34,10 +54,8 @@ namespace vkfl {
     {
       throw error{ "The instance handle must not be null." };
     }
-    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
-    const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
-@load_instance@
-@load_device@
+    load_instance_fns(context);
+    load_device_fns(context);
     m_loaded_instance = context;
     m_loaded_device = nullptr;
     return *this;
@@ -52,9 +70,7 @@ namespace vkfl {
     {
       throw error{ "A matching instance must be loaded before loading a device." };
     }
-    constexpr auto idx = static_cast<std::size_t>(command::GetDeviceProcAddr);
-    const auto context_loader = reinterpret_cast<get_device_proc_addr_fn>(m_pfns[idx]);
-@load_device@
+    load_device_fns(context);
     m_loaded_device = context;
     return *this;
   }
@@ -65,6 +81,28 @@ namespace vkfl {
 
   VkDevice loader::loaded_device() const {
     return m_loaded_device;
+  }
+
+  loader& loader::unload_device() {
+    if (m_loaded_device)
+    {
+      load_device_fns(m_loaded_instance);
+      m_loaded_device = nullptr;
+    }
+    return *this;
+  }
+
+  loader& loader::unload_instance() {
+    if (m_loaded_instance)
+    {
+      for (auto i = std::size_t{ VKFL_GLOBAL_MAX }; i < std::size(m_pfns); ++i)
+      {
+        m_pfns[i] = nullptr;
+      }
+      m_loaded_device = nullptr;
+      m_loaded_instance = nullptr;
+    }
+    return *this;
   }
 
 }
