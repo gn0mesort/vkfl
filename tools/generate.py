@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-from collections import OrderedDict
-from urllib.request import urlopen
-from xml.etree import ElementTree as etree
-import re
 import os
 import sys
+from urllib.request import urlopen
+from xml.etree import ElementTree as etree
+from operator import attrgetter
 from argparse import ArgumentParser
+from datetime import datetime
 
 def parse_xml(path):
     file = urlopen(path) if path.startswith('http') else open(path, 'r')
     with file:
         return etree.parse(file)
-
-def to_snake_case(text: str):
-    return re.sub(r'([A-Z]+)', r'_\1', text).lower()
 
 def is_descendent(vktypes, name, base):
     if name == base:
@@ -26,6 +23,10 @@ def is_descendent(vktypes, name, base):
         return False
     return any([ is_descendent(vktypes, parent, base) for parent in parents.split(',') ])
 
+LD_GLOBAL = 0
+LD_INSTANCE = 1
+LD_DEVICE = 2
+
 def identify_group(vktypes, command):
     vkglobalpfns = [ 'vkEnumerateInstanceVersion', 'vkEnumerateInstanceExtensionProperties',
                      'vkEnumerateInstanceLayerProperties', 'vkCreateInstance', 'vkGetInstanceProcAddr' ]
@@ -33,98 +34,43 @@ def identify_group(vktypes, command):
     owner = command.findtext('param[1]/type')
     for pfn in vkglobalpfns:
         if name == pfn:
-            return 'global'
+            return LD_GLOBAL
     if name != 'vkGetDeviceProcAddr' and is_descendent(vktypes, owner, 'VkDevice'):
-        return 'device'
-    return 'instance'
+        return LD_DEVICE
+    return LD_INSTANCE
 
-def commands_str(commands_by_requirement):
+def commands_str(commands):
     result = ''
-    for requirement in commands_by_requirement:
-        # result += f'#if {requirement}{os.linesep}'
-        commands = commands_by_requirement[requirement]
-        for command in commands:
-            name = command['name']
-            result += f'\t\t{name[2:]},{os.linesep}'
-        # result += f'#endif{os.linesep}'
+    for command in commands:
+        name = command['name']
+        result += f'\t\t{name[2:]},{os.linesep}'
     return result.strip().expandtabs(2)
 
-def command_count_str(commands_by_requirement):
-    result = 0
-    for requirement in commands_by_requirement:
-        result += len(commands_by_requirement[requirement])
-    return str(result)
+def command_count_str(commands):
+    return str(len(commands))
 
-def global_loader_str(commands_by_requirement):
+def defines_str(apis, exts):
     result = ''
-    for requirement in commands_by_requirement:
-        # tmp = f'#if {requirement}{os.linesep}'
-        tmp = ''
-        commands = commands_by_requirement[requirement]
-        cmd_count = 0
-        for command in commands:
-            if command['loaded_from'] == 'global' and command['name'] != 'vkGetInstanceProcAddr':
-                name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
-                tmp += f'context_loader(nullptr, "{name}");{os.linesep}'
-                cmd_count += 1
-        # tmp += f'#endif{os.linesep}'
-        if cmd_count > 0:
-            result += tmp
+    for api in apis:
+        symbol = api.replace('VK_VERSION', 'VKFL_USE_API')
+        result += f'#define {symbol} 1{os.linesep}'
+    for ext in exts:
+        symbol = ext.replace('VK', 'VKFL_USE_EXTENSION', 1).upper()
+        result += f'#define {symbol} 1{os.linesep}'
+    time = datetime.utcnow()
+    result += f'#define VKFL_BUILD_DATE {time.year}{time.month:02}{time.day:02}ULL{os.linesep}'
+    result += f'#define VKFL_BUILD_TIME {time.hour}{time.minute:02}{time.second:02}ULL{os.linesep}'
+    return result.rstrip()
+
+def loader_str(commands):
+    result = ''
+    for command in commands:
+        name = command['name']
+        if name == 'vkGetInstanceProcAddr':
+            continue
+        result += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
+        result += f'context_loader(context, "{name}");{os.linesep}'
     return result.rstrip().expandtabs(2)
-
-def instance_loader_str(commands_by_requirement):
-    result = ''
-    for requirement in commands_by_requirement:
-        tmp = '' # f'#if {requirement}{os.linesep}'
-        commands = commands_by_requirement[requirement]
-        cmd_count = 0
-        for command in commands:
-            if command['loaded_from'] == 'instance':
-                name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
-                tmp += f'context_loader(context, "{name}");{os.linesep}'
-                cmd_count += 1
-        # tmp += f'#endif{os.linesep}'
-        if cmd_count > 0:
-            result += tmp
-    return result.rstrip().expandtabs(2)
-
-def device_loader_str(commands_by_requirement):
-    result = ''
-    for requirement in commands_by_requirement:
-        tmp = '' # f'#if {requirement}{os.linesep}'
-        commands = commands_by_requirement[requirement]
-        cmd_count = 0
-        for command in commands:
-            if command['loaded_from'] == 'device':
-                name = command['name']
-                tmp += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
-                tmp += f'context_loader(context, "{name}");{os.linesep}'
-                cmd_count += 1
-        # tmp += f'#endif{os.linesep}'
-        if cmd_count > 0:
-            result += tmp
-    return result.rstrip().expandtabs(2)
-
-def undef_str(undefs):
-    result = ''
-    for undef_name in undefs:
-        result += f'#if defined({undef_name}){os.linesep}'
-        result += f'\t#undef {undef_name}{os.linesep}'
-        result += f'#endif{os.linesep}'
-    return result.rstrip().expandtabs(2)
-
-def aliasfns_str(commands_by_requirement):
-    result = ''
-    for requirement in commands_by_requirement:
-        result += f'#if {requirement}{os.linesep}'
-        commands = commands_by_requirement[requirement]
-        for command in commands:
-            name = command['name']
-            result += f'\tusing {to_snake_case(name)[3:]} = PFN_{name};{os.linesep}'
-        result += f'#endif{os.linesep}'
-    return result.strip().expandtabs(2)
 
 def header_version_str(tree):
     return tree.find('types/type[name="VK_HEADER_VERSION"]').find('name').tail.strip()
@@ -145,92 +91,73 @@ parser.add_argument('OUTPUT', type=str)
 
 args = parser.parse_args()
 tree = parse_xml(args.spec)
-exts = set(args.extensions.split(','))
-api = args.api
-if api != 'latest':
-    api = float(api)
-
-vktypes = { }
-for vktype in tree.findall('types/type'):
-    name = vktype.findtext('name')
-    vktypes[name] = vktype
-
-vkcommands = { }
-for vkcommand in tree.findall('commands/command'):
-    alias = vkcommand.get('alias')
-    name = vkcommand.get('name') if alias else vkcommand.findtext('proto/name')
-    vkcommands[name] = { }
-    vkcommands[name]['name'] = name
-    vkcommands[name]['element'] = vkcommand
-    vkcommands[name]['requirement'] = [ ]
-    vkcommands[name]['used_by'] = set()
-    vkcommands[name]['is_alias'] = True if alias else False
-    vkcommands[name]['loaded_from'] = identify_group(vktypes, vkcommand)
-
-for vkfeature in tree.findall('feature'):
-    name = vkfeature.get('name')
-    version = float(vkfeature.get('number'))
-    for command in vkfeature.findall('require/command'):
+input_exts = set(args.extensions.split(','))
+use_all_exts = False
+if 'all' in input_exts:
+    use_all_exts = True
+exts = set()
+api_version = None
+use_latest_api = False
+if args.api == 'latest':
+    use_latest_api = True
+else:
+    api_version = float(args.api)
+apis = set()
+vk_types = { }
+for vk_type in tree.findall('types/type'):
+    name = vk_type.findtext('name')
+    vk_types[name] = vk_type
+vk_commands = { }
+for vk_command in tree.findall('commands/command'):
+    alias = vk_command.get('alias')
+    name = vk_command.get('name') if alias else vk_command.findtext('proto/name')
+    vk_commands[name] = { }
+    vk_commands[name]['name'] = name
+    vk_commands[name]['element'] = vk_command
+    vk_commands[name]['used_by_apis'] = set()
+    vk_commands[name]['used_by_exts'] = set()
+    vk_commands[name]['is_alias'] = True if alias else False
+    vk_commands[name]['loaded_from'] = identify_group(vk_types, vk_command)
+for vk_feature in tree.findall('feature'):
+    name = vk_feature.get('name')
+    version = float(vk_feature.get('number'))
+    if use_latest_api or version - api_version < 0.00001:
+        apis.add(name)
+    for command in vk_feature.findall('require/command'):
         command_name = command.get('name')
-        vkcommands[command_name]['used_by'].add(name)
-        vkcommands[command_name]['requirement'].append(f'defined({name})')
-
-for vkextension in tree.findall('extensions/extension'):
-    name = vkextension.get('name')
-    for requirement in vkextension.findall('require'):
-        subrequirement = requirement.get('extension')
-        subrequirement = subrequirement if subrequirement else requirement.get('feature')
-        compound = f'defined({name}) && defined({subrequirement})' if subrequirement else f'defined({name})'
+        vk_commands[command_name]['used_by_apis'].add(name)
+for vk_extension in tree.findall('extensions/extension'):
+    name = vk_extension.get('name')
+    for requirement in vk_extension.findall('require'):
+        if use_all_exts or name in input_exts:
+            exts.add(name)
         for command in requirement.findall('command'):
             command_name = command.get('name')
-            vkcommands[command_name]['used_by'].add(name)
-            vkcommands[command_name]['requirement'].append(compound)
-
-undefs = set()
-for vkfeature in tree.findall('feature'):
-    version = float(vkfeature.get('number'))
-    name = vkfeature.get('name')
-    for vkcommand in vkcommands:
-        if api != 'latest' and version - api > 0.00001 and name in vkcommands[vkcommand]['used_by']:
-            vkcommands[vkcommand]['used_by'].remove(name)
-            undefs.add(name)
-for vkextension in tree.findall('extensions/extension'):
-    name = vkextension.get('name')
-    for vkcommand in vkcommands:
-        if not ('all' in exts) and not (name in exts) and name in vkcommands[vkcommand]['used_by']:
-            vkcommands[vkcommand]['used_by'].remove(name)
-            undefs.add(name)
-
-for vkcommand in vkcommands:
-    final_requirement = ''
-    if len(vkcommands[vkcommand]['used_by']) == 0:
-        final_requirement = '(0)'
-    else:
-        final_requirement = f'({vkcommands[vkcommand]["requirement"][0]})'
-        for requirement in vkcommands[vkcommand]['requirement'][1:]:
-            final_requirement += f' || ({requirement})'
-    vkcommands[vkcommand]['requirement'] = final_requirement
-
-commands_by_requirement = OrderedDict()
-for vkcommand in sorted(vkcommands):
-    requirement = vkcommands[vkcommand]['requirement']
-    if not commands_by_requirement.get(requirement):
-        commands_by_requirement[requirement] = [ ]
-    commands_by_requirement[requirement].append(vkcommands[vkcommand])
-if '(0)' in commands_by_requirement:
-    commands_by_requirement.pop('(0)')
-
+            vk_commands[command_name]['used_by_exts'].add(name)
+vk_global_commands = [ ]
+vk_instance_commands = [ ]
+vk_device_commands = [ ]
+for vk_command in vk_commands:
+    command = vk_commands[vk_command]
+    if not apis.isdisjoint(command['used_by_apis']) or not exts.isdisjoint(command['used_by_exts']):
+        if command['loaded_from'] == LD_GLOBAL:
+            vk_global_commands.append(command)
+        elif command['loaded_from'] == LD_INSTANCE:
+            vk_instance_commands.append(command)
+        elif command['loaded_from'] == LD_DEVICE:
+            vk_device_commands.append(command)
+vk_all_commands = vk_global_commands + vk_instance_commands + vk_device_commands
+vk_all_commands = sorted(vk_all_commands, key=lambda command: command['name'])
 text = ''
 with open(args.INPUT, 'rb') as file:
     text = str(file.read(), 'utf-8')
-text = text.replace('@undefs@', undef_str(undefs))
-text = text.replace('@commands@', commands_str(commands_by_requirement))
-text = text.replace('@commands_count@', command_count_str(commands_by_requirement))
+text = text.replace('@commands@', commands_str(vk_all_commands))
+text = text.replace('@commands_count@', command_count_str(vk_all_commands))
 text = text.replace('@header_version@', header_version_str(tree))
-text = text.replace('@load_global@', global_loader_str(commands_by_requirement))
-text = text.replace('@load_instance@', instance_loader_str(commands_by_requirement))
-text = text.replace('@load_device@', device_loader_str(commands_by_requirement))
-text = text.replace('@aliasfns@', aliasfns_str(commands_by_requirement))
+text = text.replace('@load_global@', loader_str(vk_global_commands))
+text = text.replace('@load_instance@', loader_str(vk_instance_commands))
+text = text.replace('@load_device@', loader_str(vk_device_commands))
+text = text.replace('@defines@', defines_str(apis, exts))
 with open(args.OUTPUT, 'wb') as file:
     file.truncate()
     file.write(bytes(text, 'utf-8'))

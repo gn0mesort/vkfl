@@ -19,7 +19,7 @@
 
 #define VKFL_DEFINE_HANDLE(object) \
   struct object##_T; \
-  using object = object##_T*;
+  using object = object##_T*
 
 VKFL_DEFINE_HANDLE(VkInstance);
 VKFL_DEFINE_HANDLE(VkDevice);
@@ -51,6 +51,8 @@ VKFL_DEFINE_HANDLE(VkDevice);
 #ifndef VKFLAPI_PTR
   #define VKFLAPI_PTR VKFLAPI_PTR_PRIV
 #endif
+
+@defines@
 
 namespace vkfl {
 

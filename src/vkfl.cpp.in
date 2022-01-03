@@ -15,6 +15,7 @@ namespace vkfl {
       throw error{ "The global loader function must not be null." };
     }
     const auto context_loader = global;
+    const auto context = nullptr;
 @load_global@
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     m_pfns[idx] = reinterpret_cast<any_fn>(global);

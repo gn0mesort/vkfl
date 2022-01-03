@@ -14,11 +14,12 @@ int main() {
   std::memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   {
-#if defined(VK_VERSION_1_1)
+#if defined(VKFL_USE_API_1_1)
     auto pfn = VKFL_GET_PFN(ld, EnumerateInstanceVersion);
     assert(pfn != nullptr);
     auto res = pfn(&app_info.apiVersion);
     assert(res == VK_SUCCESS);
+    (void) res;
 #else
     app_info.apiVersion = VK_VERSION_1_0;
 #endif
@@ -33,6 +34,7 @@ int main() {
     assert(pfn != nullptr);
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
+    (void) res;
   }
   ld.load(instance);
   auto device_info = VkDeviceCreateInfo{ };
@@ -45,6 +47,7 @@ int main() {
     auto sz = std::uint32_t{ 1 };
     auto res = pfn(instance, &sz, &pdev);
     assert(res >= 0);
+    (void) res;
   }
   auto device = VkDevice{ };
   {
@@ -52,11 +55,14 @@ int main() {
     assert(pfn != nullptr);
     auto res = pfn(pdev, &device_info, nullptr, &device);
     assert(res == VK_SUCCESS);
+    (void) res;
   }
   auto old_pfn = VKFL_GET_PFN(ld, CmdDraw);
   ld.load(device);
   auto new_pfn = VKFL_GET_PFN(ld, CmdDraw);
   assert(new_pfn != nullptr);
   assert(new_pfn != old_pfn);
+  (void) old_pfn;
+  (void) new_pfn;
   return 0;
 }

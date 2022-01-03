@@ -1,18 +1,14 @@
-if true
-  test_exe = executable('global-function-load', files('test_global.cpp'),
-                        dependencies: [ vkfl_dep, dependency('vulkan') ])
-  test('global-function-load', test_exe)
-endif
+vulkan_dep = dependency('vulkan', disabler: true)
+if vulkan_dep.found()
+  test_global_exe = executable('global-function-load', files('test_global.cpp'),
+                               dependencies: [ vkfl_dep, vulkan_dep ])
+  test('global-function-load', test_global_exe)
 
-if true
-  test_exe = executable('instance-function-load', files('test_instance.cpp'),
-                        dependencies: [ vkfl_dep, dependency('vulkan') ])
-  test('instance-function-load', test_exe)
-endif
-
-if true
-  test_exe = executable('device-function-load', files('test_device.cpp'),
-                        dependencies: [ vkfl_dep, dependency('vulkan') ])
-  test('device-function-load', test_exe)
+  test_instance_exe = executable('instance-function-load', files('test_instance.cpp'),
+                                 dependencies: [ vkfl_dep, vulkan_dep ])
+  test('instance-function-load', test_instance_exe)
+  test_device_exe = executable('device-function-load', files('test_device.cpp'),
+                               dependencies: [ vkfl_dep, vulkan_dep ])
+  test('device-function-load', test_device_exe)
 endif
 
