@@ -12,30 +12,29 @@ def parse_xml(path):
     with file:
         return etree.parse(file)
 
-def is_descendent(vktypes, name, base):
+def is_descendent(vk_types, name, base):
     if name == base:
         return True
-    current = vktypes.get(name)
+    current = vk_types.get(name)
     if not current:
         return False
     parents = current.get('parent')
     if not parents:
         return False
-    return any([ is_descendent(vktypes, parent, base) for parent in parents.split(',') ])
+    return any([ is_descendent(vk_types, parent, base) for parent in parents.split(',') ])
 
 LD_GLOBAL = 0
 LD_INSTANCE = 1
 LD_DEVICE = 2
 
-def identify_group(vktypes, command):
-    vkglobalpfns = [ 'vkEnumerateInstanceVersion', 'vkEnumerateInstanceExtensionProperties',
-                     'vkEnumerateInstanceLayerProperties', 'vkCreateInstance', 'vkGetInstanceProcAddr' ]
+def identify_group(vk_types, command):
+    vk_global_pfns = set([ 'vkEnumerateInstanceVersion', 'vkEnumerateInstanceExtensionProperties',
+                           'vkEnumerateInstanceLayerProperties', 'vkCreateInstance', 'vkGetInstanceProcAddr' ])
     name = command.findtext('proto/name')
     owner = command.findtext('param[1]/type')
-    for pfn in vkglobalpfns:
-        if name == pfn:
-            return LD_GLOBAL
-    if name != 'vkGetDeviceProcAddr' and is_descendent(vktypes, owner, 'VkDevice'):
+    if name in vk_global_pfns:
+        return LD_GLOBAL
+    if name != 'vkGetDeviceProcAddr' and is_descendent(vk_types, owner, 'VkDevice'):
         return LD_DEVICE
     return LD_INSTANCE
 
@@ -123,8 +122,15 @@ for vk_command in tree.findall('commands/command'):
     vk_commands[name]['element'] = vk_command
     vk_commands[name]['used_by_apis'] = set()
     vk_commands[name]['used_by_exts'] = set()
-    vk_commands[name]['is_alias'] = True if alias else False
-    vk_commands[name]['loaded_from'] = identify_group(vk_types, vk_command)
+    ident_node = None
+    if alias:
+        vk_commands[name]['is_alias'] = True
+        ident_node = tree.find(f'commands/command/proto/name[.="{alias}"]/../..')
+    else:
+        vk_commands[name]['is_alias'] = False
+        ident_node = vk_command
+    vk_commands[name]['loaded_from'] = identify_group(vk_types, ident_node)
+
 for vk_feature in tree.findall('feature'):
     name = vk_feature.get('name')
     version = float(vk_feature.get('number'))
@@ -166,8 +172,8 @@ text = text.replace('@load_global@', loader_str(vk_global_commands))
 text = text.replace('@load_instance@', loader_str(vk_instance_commands))
 text = text.replace('@load_device@', loader_str(vk_device_commands))
 text = text.replace('@defines@', defines_str(apis, exts))
-text = text.replace('@private_defines@', private_defines_str(vk_global_commands, vk_instance_commands,
-                                                             vk_device_commands))
+text = text.replace('@private_defines@',
+                    private_defines_str(vk_global_commands, vk_instance_commands, vk_device_commands))
 with open(args.OUTPUT, 'wb') as file:
     file.truncate()
     file.write(bytes(text, 'utf-8'))
