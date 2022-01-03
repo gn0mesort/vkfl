@@ -1,7 +1,7 @@
 # vkfl
 
 vkfl is a dynamic command function pointer loader for Vulkan. There are many other ways to load command function
-pointers but I prefer this for several the following reasons:
+pointers but I prefer this for the following reasons:
 
 - vkfl doesn't introduce any global state.
 - vkfl doesn't depend directly on Vulkan.
@@ -27,9 +27,10 @@ ninja -C build
 ```
 and then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp`) into your project.
 
-For examples of usage in source code see [`test/test_device.cpp`](https://github.com/gn0mesort/vkfl/blob/master/test/test_device.cpp) which includes a fairly
-complete usage example.
+For examples of usage in source code see
+[`examples/basic_use.cpp`](https://github.com/gn0mesort/vkfl/blob/master/examples/basic_use.cpp).
 
 ## Acknowledgements
 
-Much of `generate.py` is based on the equivalent file from [Volk](https://github.com/zeux/volk).
+Much of `generate.py` is based on the equivalent file from [volk](https://github.com/zeux/volk). If you don't like vkfl
+you should give volk a try instead.
