@@ -2,7 +2,7 @@ project(
   'vkfl',
   [ 'c', 'cpp' ],
   version: '1.0.0',
-  license: 'LGPL-3.0',
+  license: 'Apache-2.0',
   default_options: [
     'c_std=c18',
     'c_link_args=-Wl,-rpath=$ORIGIN/../lib',

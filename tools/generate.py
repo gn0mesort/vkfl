@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import os
-import sys
 from urllib.request import urlopen
 from xml.etree import ElementTree as etree
-from operator import attrgetter
 from argparse import ArgumentParser
 from datetime import datetime
 
@@ -94,7 +92,6 @@ parser.add_argument('--api', type=str, default='latest',
                          'This may also be the special value \"latest\".')
 parser.add_argument('INPUT', type=str)
 parser.add_argument('OUTPUT', type=str)
-
 args = parser.parse_args()
 tree = parse_xml(args.spec)
 input_exts = set(args.extensions.split(','))
@@ -130,7 +127,6 @@ for vk_command in tree.findall('commands/command'):
         vk_commands[name]['is_alias'] = False
         ident_node = vk_command
     vk_commands[name]['loaded_from'] = identify_group(vk_types, ident_node)
-
 for vk_feature in tree.findall('feature'):
     name = vk_feature.get('name')
     version = float(vk_feature.get('number'))
