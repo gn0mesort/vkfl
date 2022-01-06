@@ -32,5 +32,5 @@ For examples of usage in source code see
 
 ## Acknowledgements
 
-Much of `generate.py` is based on the equivalent file from [volk](https://github.com/zeux/volk). If you don't like vkfl
-you should give volk a try instead.
+Parts of `generate.py` are based on the equivalent file from [volk](https://github.com/zeux/volk). If you don't like
+vkfl you should give volk a try instead.
