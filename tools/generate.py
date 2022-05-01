@@ -122,6 +122,11 @@ def enabled_by_any(check_features: set[str], features: dict):
     for key in check_features:
         res = res or features[key]['enabled']
     return res
+def version_cmp(ver1: list[str], ver2: list[str]):
+    major = int(ver1[0]) - int(ver2[0])
+    if major == 0:
+        return int(ver1[1]) - int(ver2[1])
+    return major
 
 VK_SPEC = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml'
 
@@ -148,7 +153,7 @@ use_latest_api = False
 if args.api == 'latest':
     use_latest_api = True
 else:
-    api_version = float(args.api)
+    api_version = args.api.split('.')
 apis = { }
 vk_types = { }
 for vk_type in tree.findall('types/type'):
@@ -173,9 +178,9 @@ for vk_command in tree.findall('commands/command'):
     vk_commands[name]['loaded_from'] = identify_group(vk_types, ident_node)
 for vk_feature in tree.findall('feature'):
     name = vk_feature.get('name')
-    version = float(vk_feature.get('number'))
+    version = vk_feature.get('number').split('.')
     apis[name] = { 'enabled': False }
-    if use_latest_api or abs(version - api_version) < 0.00001:
+    if use_latest_api or version_cmp(version, api_version) <= 0:
         apis[name]['enabled'] = True
     for command in vk_feature.findall('require/command'):
         command_name = command.get('name')
