@@ -2,3 +2,5 @@ option('api', type: 'string', value: 'latest', description: 'The Vulkan API vers
 option('extensions', type: 'array', value: [ 'all' ], description: 'A set of Vulkan extensions to include.')
 option('specification', type: 'string', value: 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml',
        description: 'A path indicating the location of the desired Vulkan specification (XML) to generate a loader from.')
+option('enable_tests', type: 'boolean', value: false, description: 'Whether or not to build tests')
+option('enable_examples', type: 'boolean', value: false, description: 'Whether or not to build example programs')
