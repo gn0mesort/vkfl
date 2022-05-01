@@ -172,7 +172,9 @@ namespace vkfl {
      * @param cmd The Vulkan command to retrieve a function pointer for.
      * @returns A pointer to the desired Vulkan command function or null.
      */
-    any_fn operator()(const command cmd) const;
+    constexpr any_fn operator()(const command cmd) const {
+      return m_pfns[static_cast<std::size_t>(cmd)];
+    }
 
     /**
      * @brief Resolve a Vulkan command into a function pointer.
@@ -187,7 +189,9 @@ namespace vkfl {
      * @param cmd The Vulkan command to retrieve a function pointer for.
      * @returns A pointer to the desired Vulkan command function or null.
      */
-    any_fn get(const command) const;
+    constexpr any_fn get(const command cmd) const {
+      return m_pfns[static_cast<std::size_t>(cmd)];
+    }
 
     /**
      * @brief Load instance level function pointers.

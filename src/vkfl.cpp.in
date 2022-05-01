@@ -54,6 +54,7 @@ namespace vkfl {
     m_pfns[idx] = reinterpret_cast<any_fn>(global);
   }
 
+/*
   loader::any_fn loader::get(const command cmd) const {
     return m_pfns[static_cast<std::size_t>(cmd)];
   }
@@ -61,6 +62,7 @@ namespace vkfl {
   loader::any_fn loader::operator()(const command cmd) const {
     return get(cmd);
   }
+*/
 
   loader& loader::load(const VkInstance context) {
     if (!context)
