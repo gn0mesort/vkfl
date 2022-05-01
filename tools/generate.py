@@ -82,11 +82,16 @@ def command_count_str(commands):
 def defines_str(apis, exts):
     result = ''
     for api in apis:
-        symbol = api.replace('VK_VERSION', 'VKFL_USE_API')
-        result += f'#define {symbol} 1{os.linesep}'
+        symbol = api.replace('VK_VERSION', 'VKFL_API').upper() + '_ENABLED'
+        result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
     for ext in exts:
-        symbol = ext.replace('VK', 'VKFL_USE_EXTENSION', 1).upper()
-        result += f'#define {symbol} 1{os.linesep}'
+        symbol = ext.replace('VK', 'VKFL', 1).upper()
+        result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
+        if exts[ext]['enabled']:
+            sym_name = f'{symbol}_EXTENSION_NAME'
+            result += f'#define {sym_name} \"{ext}\"{os.linesep}'
+            sym_version = f'{symbol}_SPEC_VERSION'
+            result += f"#define {sym_version} {exts[ext]['version']}{os.linesep}"
     time = datetime.utcnow()
     result += f'#define VKFL_BUILD_DATE {time.year}{time.month:02}{time.day:02}ULL{os.linesep}'
     result += f'#define VKFL_BUILD_TIME {time.hour}{time.minute:02}{time.second:02}ULL{os.linesep}'
@@ -112,6 +117,12 @@ def loader_str(commands):
 def header_version_str(tree):
     return tree.find('types/type[name="VK_HEADER_VERSION"]').find('name').tail.strip()
 
+def enabled_by_any(check_features: set[str], features: dict):
+    res = False
+    for key in check_features:
+        res = res or features[key]['enabled']
+    return res
+
 VK_SPEC = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml'
 
 parser = ArgumentParser()
@@ -131,14 +142,14 @@ input_exts = set(args.extensions.split(','))
 use_all_exts = False
 if 'all' in input_exts:
     use_all_exts = True
-exts = set()
+exts = { }
 api_version = None
 use_latest_api = False
 if args.api == 'latest':
     use_latest_api = True
 else:
     api_version = float(args.api)
-apis = set()
+apis = { }
 vk_types = { }
 for vk_type in tree.findall('types/type'):
     name = vk_type.findtext('name')
@@ -163,16 +174,22 @@ for vk_command in tree.findall('commands/command'):
 for vk_feature in tree.findall('feature'):
     name = vk_feature.get('name')
     version = float(vk_feature.get('number'))
-    if use_latest_api or version - api_version < 0.00001:
-        apis.add(name)
+    apis[name] = { 'enabled': False }
+    if use_latest_api or abs(version - api_version) < 0.00001:
+        apis[name]['enabled'] = True
     for command in vk_feature.findall('require/command'):
         command_name = command.get('name')
         vk_commands[command_name]['used_by_apis'].add(name)
 for vk_extension in tree.findall('extensions/extension'):
     name = vk_extension.get('name')
+    exts[name] = { 'enabled': False, 'version': 0 }
+    if use_all_exts or name in input_exts:
+        exts[name]['enabled'] = True
     for requirement in vk_extension.findall('require'):
-        if use_all_exts or name in input_exts:
-            exts.add(name)
+        for enum in requirement.findall('enum'):
+            if enum.get('name') == f'{name.upper()}_SPEC_VERSION':
+                value = enum.get('value')
+                exts[name]['version'] = int(value) if value else 0
         for command in requirement.findall('command'):
             command_name = command.get('name')
             vk_commands[command_name]['used_by_exts'].add(name)
@@ -181,7 +198,8 @@ vk_instance_commands = [ ]
 vk_device_commands = [ ]
 for vk_command in vk_commands:
     command = vk_commands[vk_command]
-    if not apis.isdisjoint(command['used_by_apis']) or not exts.isdisjoint(command['used_by_exts']):
+#    if not apis.keys().isdisjoint(command['used_by_apis']) or not exts.keys().isdisjoint(command['used_by_exts']):
+    if enabled_by_any(command['used_by_apis'], apis) or enabled_by_any(command['used_by_exts'], exts):
         if command['loaded_from'] == LD_GLOBAL:
             vk_global_commands.append(command)
         elif command['loaded_from'] == LD_INSTANCE:
