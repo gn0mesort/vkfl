@@ -7,7 +7,7 @@ While there are plenty of other ways to achieve this I prefer vkfl because:
 - vkfl doesn't introduce any global state and namespaces all symbols.
 - vkfl doesn't depend directly on libvulkan or Vulkan headers.
 - vkfl doesn't require any special compile time configuration of Vulkan.
-- vkfl's generator can generate relatively small files (~50KiB for the header and ~25KiB for the source file) compared to other similar tools.
+- vkfl's generator can generate relatively small files (~55KiB for the header and ~25KiB for the source file) compared to other similar tools.
 - vkfl's generator can generate files for specific API versions and extensions (e.g. Vulkan 1.3 with only `VK_KHR_surface`, `VK_KHR_xcb_surface`, and `VK_KHR_swapchain`).
 - vkfl is easy to use as a [Meson](https://mesonbuild.com) subproject.
 
@@ -70,7 +70,7 @@ optional arguments:
                         A comma separated list of Vulkan extensions to include in the loader. This may also be the special value "all". Defaults to "all".
   --api API             The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.). This may also be the special value "latest". Defaults to "latest".
   --generate-extra-defines
-                        Enable the generation of "VKFL_EXTORAPINAME_ENABLED" definitions with a value of 0 (disabled) as well as "VKFL_EXTNAME_EXTENSION_NAME" and "VKFL_EXTNAME_SPEC_VERSION" symbols. This is disabled by default.
+                        Enable the generation of "VKFL_X_EXTENSION_NAME" and "VKFL_X_SPEC_VERSION" symbols. This is disabled by default.
 ```
 It's possible to use the generator with any input file. However, [`include/vkfl.hpp.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.hpp.in) and
 [`src/vkfl.cpp.in`](https://github.com/gn0mesort/vkfl/blob/master/src/vkfl.cpp.in) are intended to generate the canonical C++ implementation. Similarly,
@@ -84,6 +84,20 @@ vkfl provides both a C18 (i.e. C11) and a C++20 (although it will probably compi
 implementation. While these are largely the same they are not necessarily related. You probably shouldn't use
 both implementations at the same time. In any case, `vkfl::loader` and `vkfl_loader` are not guaranteed to be binary
 compatible.
+
+## Building Tests and Examples
+
+By default test targets and example targets are disabled. To enable tests ensure that you have a build directory
+configured and then run:
+```sh
+meson configure build -Denable_tests=true
+```
+To enable examples run:
+```sh
+meson configure build -Denable_examples=true
+```
+The `example/global_use.cpp` and `example/global_use.c` files require `dlfcn.h`, `dlopen`, `dlclose`, and `dlsym` to
+compile (i.e. they won't compile on Windows).
 
 ## Acknowledgements
 

@@ -76,17 +76,6 @@ def commands_str(commands):
         result += f'\t\t{name[2:]},{os.linesep}'
     return result.strip().expandtabs(2)
 
-def to_upper_snake(s: str):
-    result = ''
-    last_was_lower = False;
-    for c in s:
-        if last_was_lower and c.isupper():
-            result += '_' + c
-        else:
-            result += c.upper()
-        last_was_lower = True if c.islower() else False
-    return result
-
 def c_commands_str(commands):
     result = ''
     for command in commands:
@@ -105,13 +94,12 @@ def defines_str(apis, exts, generate_extra_defines: bool):
             result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
     for ext in exts:
         symbol = ext.replace('VK', 'VKFL', 1).upper()
-        if exts[ext]['enabled'] or generate_extra_defines:
-            result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
-            if exts[ext]['enabled'] and generate_extra_defines:
-                sym_name = f'{symbol}_EXTENSION_NAME'
-                result += f'#define {sym_name} \"{ext}\"{os.linesep}'
-                sym_version = f'{symbol}_SPEC_VERSION'
-                result += f"#define {sym_version} {exts[ext]['version']}{os.linesep}"
+        result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
+        if exts[ext]['enabled'] and generate_extra_defines:
+            sym_name = f'{symbol}_EXTENSION_NAME'
+            result += f'#define {sym_name} \"{ext}\"{os.linesep}'
+            sym_version = f'{symbol}_SPEC_VERSION'
+            result += f"#define {sym_version} {exts[ext]['version']}{os.linesep}"
     time = datetime.utcnow()
     result += f'#define VKFL_BUILD_DATE {time.year}{time.month:02}{time.day:02}ULL{os.linesep}'
     result += f'#define VKFL_BUILD_TIME {time.hour}{time.minute:02}{time.second:02}ULL{os.linesep}'
@@ -127,13 +115,13 @@ def common_private_defines(global_commands, instance_commands, device_commands):
 
 def private_defines_str(global_commands, instance_commands, device_commands):
     result = common_private_defines(global_commands, instance_commands, device_commands)
-    result += f'#define VKFL(cmd) (m_pfns[static_cast<std::size_t>(command::cmd)] = '
+    result += f'#define V(cmd) (m_pfns[static_cast<std::size_t>(command::cmd)] = '
     result += f'context_loader(context, VKFL_STRING(vk##cmd))){os.linesep}'
     return result.rstrip().expandtabs(2)
 
 def c_private_defines_str(global_commands, instance_commands, device_commands):
     result = common_private_defines(global_commands, instance_commands, device_commands)
-    result += f'#define VKFL(cmd) (dl->pfns[VKFL_COMMAND_##cmd] = context_loader(context, VKFL_STRING(vk##cmd)))'
+    result += f'#define V(cmd) (dl->pfns[VKFL_COMMAND_##cmd] = context_loader(context, VKFL_STRING(vk##cmd)))'
     return result.rstrip().expandtabs(2)
 
 def loader_str(commands, is_macro: bool):
@@ -143,7 +131,7 @@ def loader_str(commands, is_macro: bool):
         name = command['name']
         if name == 'vkGetInstanceProcAddr':
             continue
-        result += f'\t\tVKFL({name[2:]});{lineend}{os.linesep}'
+        result += f'\t\tV({name[2:]});{lineend}{os.linesep}'
     return result.rstrip().expandtabs(2)
 
 def header_version_str(tree):
@@ -174,9 +162,8 @@ parser.add_argument('--api', type=str, default='latest',
                     help='The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.). ' +
                          'This may also be the special value \"latest\". Defaults to \"latest\".')
 parser.add_argument('--generate-extra-defines', const=True, action='store_const', default=False,
-                    help='Enable the generation of \"VKFL_EXTORAPINAME_ENABLED\" definitions with a value of 0 ' +
-                         '(disabled) as well as \"VKFL_EXTNAME_EXTENSION_NAME\" and \"VKFL_EXTNAME_SPEC_VERSION\" ' +
-                         'symbols. This is disabled by default.')
+                    help='Enable the generation of \"VKFL_X_EXTENSION_NAME\" and \"VKFL_X_SPEC_VERSION\" symbols. ' +
+                         'This is disabled by default.')
 parser.add_argument('INPUT', type=str, help='A path to an input template file.')
 parser.add_argument('OUTPUT', type=str, help='A path to an output file.')
 args = parser.parse_args()

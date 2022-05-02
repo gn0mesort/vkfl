@@ -29,11 +29,11 @@ int main() {
   VkApplicationInfo app_info;
   memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-#if defined(VKFL_API_1_3_ENABLED) && VKFL_API_1_3_ENABLED
+#if VKFL_API_1_3_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_3;
-#elif defined(VKFL_API_1_2_ENABLED) && VKFL_API_1_2_ENABLED
+#elif VKFL_API_1_2_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_2;
-#elif defined(VKFL_API_1_1_ENABLED) && VKFL_API_1_1_ENABLED
+#elif VKFL_API_1_1_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_1;
 #else
   app_info.apiVersion = VK_API_VERSION_1_0;
