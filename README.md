@@ -54,7 +54,7 @@ For examples of usage in source code see [`examples`](https://github.com/gn0meso
 
 ## Generator Usage
 
-vkfl's generator can be found in [`tools/generate.py`](https://github.com/gn0mesort/blob/master/tools/generate.py).
+vkfl's generator can be found in [`tools/generate.py`](https://github.com/gn0mesort/vkfl/blob/master/tools/generate.py).
 The usage is as follows:
 ```
 usage: generate.py [-h] [--spec SPEC] [--extensions EXTENSIONS] [--api API] [--generate-extra-defines] INPUT OUTPUT
