@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /*
- * This demonstrates use of a vkfl::loader as a global object.
+ * This demonstrates use of a vkfl_loader as a global object.
  */
 #include <inttypes.h>
 #include <string.h>
@@ -47,9 +47,7 @@
 #define vkCreateDevice VK_GET_PFN(CreateDevice)
 #define vkDestroyDevice VK_GET_PFN(DestroyDevice)
 
-// Due to using dlopen the vkfl::loader can't be initialized statically (as it requires a valid pointer to
-// vkGetInstanceProcAddr during construction). An alternative to this would be to declare the prototype for
-// vkGetInstanceProcAddr yourself prior to declaring the loader.
+// Global vkfl_loader.
 struct vkfl_loader* g_loader;
 
 void error(const char *const message) {

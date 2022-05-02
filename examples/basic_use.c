@@ -44,7 +44,7 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   // Resolve a function pointer.
   // Note that to do anything useful with the resulting function pointer it needs to be cast to the correct type.
-  // vkfl.hpp does not introduce these types so you need vulkan.h as well.
+  // vkfl.h does not introduce these types so you need vulkan.h as well.
   PFN_vkCreateInstance create_instance = (PFN_vkCreateInstance) vkfl_get(ld, VKFL_COMMAND_CreateInstance);
   if (!create_instance)
   {
