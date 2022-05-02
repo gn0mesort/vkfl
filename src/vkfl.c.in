@@ -61,6 +61,10 @@ struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn glob
 }
 
 void vkfl_destroy_loader(struct vkfl_loader *const dl, const struct vkfl_allocation_callbacks *const alloc) {
+  if (!dl)
+  {
+    return;
+  }
   if (alloc && alloc->deallocator)
   {
     alloc->deallocator(dl);

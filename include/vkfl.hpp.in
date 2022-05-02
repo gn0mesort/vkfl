@@ -150,12 +150,14 @@ using std::runtime_error::runtime_error;
     /**
      * @brief Copy one `loader` into another `loader`.
      * @param rhs The `loader` to copy.
+     * @returns A reference to the modified loader.
      */
     loader& operator=(const loader& rhs) = default;
 
     /**
      * @brief Move one `loader` into another `loader`.
      * @param rhs The `loader` to move.
+     * @returns A reference to the modified loader.
      */
     loader& operator=(loader&& rhs) = default;
 
