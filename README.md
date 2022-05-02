@@ -1,44 +1,56 @@
 # vkfl
 
-vkfl is a dynamic command function pointer loader for Vulkan. There are many other ways to load command function
-pointers but I prefer this for the following reasons:
+vkfl is a dynamic command function pointer loader and dispatch table for Vulkan.
 
-- vkfl doesn't introduce any global state.
+While there are plenty of other ways to achieve this I prefer vkfl because:
+
+- vkfl doesn't introduce any global state and namespaces all symbols.
 - vkfl doesn't depend directly on libvulkan or Vulkan headers.
-- vkfl's generator can generate relatively small files (<100KiB total for Vulkan 1.3 with all extensions by default).
-- vkfl's generator can generate files for specific API versions and extensions.
+- vkfl doesn't require any special compile time configuration of Vulkan.
+- vkfl's generator can generate relatively small files (~50KiB for the header and ~25KiB for the source file) compared to other similar tools.
+- vkfl's generator can generate files for specific API versions and extensions (e.g. Vulkan 1.3 with only `VK_KHR_surface`, `VK_KHR_xcb_surface`, and `VK_KHR_swapchain`).
 - vkfl is easy to use as a [Meson](https://mesonbuild.com) subproject.
 
-I think this makes it easy to drop vkfl into a project without having to worry about whether or not it will cause a
-conflict. 
-
-## Using
+## Usage
 
 The easiest way to include vkfl in a project is as a Meson subproject. This can be done by placing a copy of this
-repository under your `subprojects/` directory and adding the following to your build file.
+repository under your `subprojects/` directory and adding the following to your build file. If you're using C++ simply
+add the following to your `meson.build`:
 ```meson
 vkfl_proj = subproject('vkfl')
-vkfl_dep = vkfl_proj.get_variable('vkfl_dep')
+vkfl_dep = vkfl_proj.get_variable('vkfl_cpp_dep')
 ```
-after that just include `vkfl_dep` as a dependency of your project.
+If you'd like to use the C implementation instead add:
+```meson
+vkfl_proj = subproject('vkfl')
+vkfl_dep = vkfl_proj.get_variable('vkfl_c_dep')
+```
+Afterward, just include `vkfl_dep` as a dependency of your project.
 
-vkfl can also be used by generating `vkfl.hpp` and `vkfl.cpp` to do this just build the meson project as follows:
+vkfl can also be used by generating directly `vkfl.hpp` and `vkfl.cpp` to do this just build the meson project as
+follows:
 ```sh
 meson build
 ninja -C build
 ```
-and then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp`) into your project.
+and then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp` for C++ or `build/vkfl.h` and
+`build/vkfl.c` for C) into your project.
 
-Finally, you can generate `vkfl.hpp` and `vkfl.cpp` manually. To do this run `tools/generate.py` as follows:
+Finally, you can use the generator script manually. To do this run `tools/generate.py` as follows:
 ```sh
+# Generates C++ files
 mkdir -p build
 tools/generate.py include/vkfl.hpp.in build/vkfl.hpp
 tools/generate.py src/vkfl.cpp.in build/vkfl.cpp
-```
-and then copy the resulting files as above.
 
-For examples of usage in source code see
-[`examples`](https://github.com/gn0mesort/vkfl/blob/master/examples/).
+# Generates C files
+mkdir -p build
+tools/generate.py include/vkfl.h.in build/vkfl.h
+tools/generate.py src/vkfl.c.in build/vkfl.c
+```
+Then, simply copy the resulting files as above.
+
+For examples of usage in source code see [`examples`](https://github.com/gn0mesort/vkfl/blob/master/examples/).
 
 ## Generator Usage
 
@@ -60,8 +72,18 @@ optional arguments:
   --generate-extra-defines
                         Enable the generation of "VKFL_EXTORAPINAME_ENABLED" definitions with a value of 0 (disabled) as well as "VKFL_EXTNAME_EXTENSION_NAME" and "VKFL_EXTNAME_SPEC_VERSION" symbols. This is disabled by default.
 ```
-It's possible to use the generator with any input file but [`include/vkfl.hpp.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.hpp.in) and
-[`src/vkfl.cpp.in`](https://github.com/gn0mesort/vkfl/blob/master/src/vkfl.cpp.in) are intended to generate the canonical implementation.
+It's possible to use the generator with any input file. However, [`include/vkfl.hpp.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.hpp.in) and
+[`src/vkfl.cpp.in`](https://github.com/gn0mesort/vkfl/blob/master/src/vkfl.cpp.in) are intended to generate the canonical C++ implementation. Similarly,
+[`include/vkfl.h.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.h.in) and
+[`src/vkfl.c.in`](https://github.com/gn0mesort/vkfl/blob/master/src/vkfl.c.in) should be used to generate the
+canonical C implementation.
+
+## C and C++ Implementations
+
+vkfl provides both a C18 (i.e. C11) and a C++20 (although it will probably compile with previous standards too)
+implementation. While these are largely the same they are not necessarily related. You probably shouldn't use
+both implementations at the same time. In any case, `vkfl::loader` and `vkfl_loader` are not guaranteed to be binary
+compatible.
 
 ## Acknowledgements
 
