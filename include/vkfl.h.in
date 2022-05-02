@@ -1,0 +1,119 @@
+#ifndef VKFL_H
+#define VKFL_H
+/**
+ * @file vkfl.h
+ * @author Alexander Rothman <gnomesort@megate.ch>
+ * @date May, 1 2022
+ * @copyright Apache-2.0
+ * @brief Dynamic Vulkan function pointer loader.
+ *
+ * Copyright 2022 Alexander Rothman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <inttypes.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define VKFL_DEFINE_HANDLE(object) \
+  struct object##_T; \
+  typedef struct object##_T* object;
+
+VKFL_DEFINE_HANDLE(VkInstance);
+VKFL_DEFINE_HANDLE(VkDevice);
+
+#if defined(_WIN32)
+  #define VKFLAPI_ATTR_PRIV
+  #define VKFLAPI_CALL_PRIV __stdcall
+  #define VKFLAPI_PTR_PRIV VKFLAPI_CALL
+#elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH < 7
+  #error "Vulkan is not supported for the 'armeabi' NDK ABI"
+#elif defined(__ANDROID__) && defined(__ARM_ARCH) && __ARM_ARCH >= 7 && defined(__ARM_32BIT_STATE)
+  #define VKFLAPI_ATTR_PRIV __attribute__((pcs("aapcs-vfp")))
+  #define VKFLAPI_CALL_PRIV
+  #define VKFLAPI_PTR_PRIV VKFLAPI_ATTR
+#else
+  #define VKFLAPI_ATTR_PRIV
+  #define VKFLAPI_CALL_PRIV
+  #define VKFLAPI_PTR_PRIV
+#endif
+
+#ifndef VKFLAPI_CALL
+  #define VKFLAPI_CALL VKFLAPI_CALL_PRIV
+#endif
+
+#ifndef VKFLAPI_ATTR
+  #define VKFLAPI_ATTR VKFLAPI_ATTR_PRIV
+#endif
+
+#ifndef VKFLAPI_PTR
+  #define VKFLAPI_PTR VKFLAPI_PTR_PRIV
+#endif
+
+@defines@
+
+enum vkfl_constant {
+  VKFL_HEADER_VERSION = @header_version@,
+  VKFL_COMMAND_COUNT = @commands_count@
+}
+
+enum vkfl_command {
+  @c_commands@
+};
+
+enum vkfl_result {
+  VKFL_ERROR_GLOBAL_LOADER_FN_IS_NULL = -1,
+  VKFL_ERROR_INSTANCE_IS_NULL = -2,
+  VKFL_ERROR_DEVICE_IS_NULL = -3,
+  VKFL_ERROR_BAD_LOAD_ORDER = -4,
+  VKFL_SUCCESS = 0,
+  VKFL_NOOP = 1
+};
+
+typedef void (VKFLAPI_PTR *vkfl_any_fn)(void);
+typedef vkfl_any_fn (VKFLAPI_PTR *vkfl_get_instance_proc_addr_fn)(VkInstance, const char*);
+typedef vkfl_any_fn (VKFLAPI_PTR *vkfl_get_device_proc_addr_fn)(VkDevice, const char*);
+typedef void* (*vkfl_allocation_fn)(const size_t);
+typedef void (*vkfl_deallocation_fn)(void *const);
+
+struct vkfl_loader;
+
+struct vkfl_allocation_callbacks {
+  vkfl_allocation_fn allocator;
+  vkfl_deallocation_fn deallocator;
+};
+
+struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn global,
+                                       const struct vkfl_allocation_callbacks *const alloc);
+void vkfl_destroy_loader(struct vkfl_loader *const dl, const struct vkfl_allocation_callbacks *const alloc);
+struct vkfl_loader* vkfl_copy_loader(const struct vkfl_loader *const dl,
+                                     const struct vkfl_allocation_callbacks* const alloc);
+
+vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context);
+vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context);
+vkfl_result vkfl_unload_device(struct vkfl_loader *const dl);
+vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl);
+
+VkInstance vkfl_loaded_instance(const struct vkfl_loader *const dl);
+VkDevice vkfl_loaded_device(const struct vkfl_loader *const dl);
+vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const vkfl_command cmd);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

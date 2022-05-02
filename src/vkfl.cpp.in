@@ -22,8 +22,11 @@
 #include "vkfl.hpp"
 
 @private_defines@
+#define VKFL_LOAD_DEVICE \
+@load_device_macro@
 
 namespace vkfl {
+
   void loader::load_instance_fns(const VkInstance context) {
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
@@ -33,13 +36,13 @@ namespace vkfl {
   void loader::load_device_fns(const VkInstance context) {
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
-@load_device@
+    VKFL_LOAD_DEVICE
   }
 
   void loader::load_device_fns(const VkDevice context) {
     constexpr auto idx = static_cast<std::size_t>(command::GetDeviceProcAddr);
     const auto context_loader = reinterpret_cast<get_device_proc_addr_fn>(m_pfns[idx]);
-@load_device@
+    VKFL_LOAD_DEVICE
   }
 
   loader::loader(const get_instance_proc_addr_fn global) {
@@ -53,16 +56,6 @@ namespace vkfl {
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     m_pfns[idx] = reinterpret_cast<any_fn>(global);
   }
-
-/*
-  loader::any_fn loader::get(const command cmd) const {
-    return m_pfns[static_cast<std::size_t>(cmd)];
-  }
-
-  loader::any_fn loader::operator()(const command cmd) const {
-    return get(cmd);
-  }
-*/
 
   loader& loader::load(const VkInstance context) {
     if (!context)

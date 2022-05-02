@@ -1,0 +1,179 @@
+/**
+ * @file vkfl.c
+ * @author Alexander Rothman <gnomesort@megate.ch>
+ * @date May, 1 2022
+ * @copyright Apache-2.0
+ * @brief Dynamic Vulkan function pointer loader.
+ *
+ * Copyright 2022 Alexander Rothman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include "vkfl.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+@c_private_defines@
+#define VKFL_LOAD_DEVICE \
+@load_device_macro@
+
+struct vkfl_loader {
+  VkInstance loaded_instance;
+  VkDevice loaded_device;
+  vkfl_any_fn pfns[VKFL_COMMAND_COUNT];
+};
+
+struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn global,
+                                       const struct vkfl_allocation_callbacks *const alloc) {
+  if (!global)
+  {
+    return NULL;
+  }
+  struct vkfl_loader* dl = NULL;
+  if (alloc && alloc->allocator)
+  {
+    dl = alloc->allocator(sizeof(struct vkfl_loader));
+  }
+  else
+  {
+    dl = malloc(sizeof(struct vkfl_loader));
+  }
+  if (!dl)
+  {
+    return NULL;
+  }
+  vkfl_get_instance_proc_addr_fn context_loader = global;
+  VkInstance context = nullptr;
+@load_global@
+  dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR] = global;
+  return dl;
+}
+
+void vkfl_destroy_loader(struct vkfl_loader *const dl, const struct vkfl_allocation_callbacks *const alloc) {
+  if (alloc && alloc->deallocator)
+  {
+    alloc->deallocator(dl);
+  }
+  else
+  {
+    free(dl);
+  }
+}
+
+struct vkfl_loader* vkfl_copy_loader(const struct vkfl_loader *const dl,
+                                     const struct vkfl_allocation_callbacks *const alloc) {
+  if (!dl)
+  {
+    return NULL;
+  }
+  struct vkfl_loader* copy = NULL;
+  if (alloc && alloc->allocator)
+  {
+    copy = alloc->allocator(sizeof(struct vkfl_loader));
+  }
+  else
+  {
+    copy = malloc(sizeof(struct vkfl_loader));
+  }
+  if (!copy)
+  {
+    return NULL;
+  }
+  memcpy(copy, dl, sizeof(struct vkfl_loader));
+  return copy;
+}
+
+vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context) {
+  if (!dl)
+  {
+    return VKFL_NOOP;
+  }
+  if (!dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR])
+  {
+    return VKFL_ERROR_BAD_LOAD_ORDER;
+  }
+  if (!context)
+  {
+    return VKFL_ERROR_INSTANCE_IS_NULL;
+  }
+  vkfl_get_instance_proc_addr_fn context_loader = dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR];
+@load_instance@
+  VKFL_LOAD_DEVICE
+  dl->loaded_instance = context;
+  dl->loaded_device = nullptr;
+  return VKFL_SUCCESS;
+}
+
+vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context) {
+  if (!dl)
+  {
+    return VKFL_NOOP;
+  }
+  if (!dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR] || !dl->loaded_instance)
+  {
+    return VKFL_ERROR_BAD_LOAD_ORDER;
+  }
+  if (!context)
+  {
+    return VKFL_ERROR_DEVICE_IS_NULL;
+  }
+  VKFL_LOAD_DEVICE
+  dl->loaded_device = context;
+  return VKFL_SUCCESS;
+}
+
+vkfl_result vkfl_unload_device(struct vkfl_loader *const dl) {
+  if (dl && dl->loaded_device)
+  {
+    return vkfl_load_instance(dl, dl->loaded_instance);
+  }
+  return VKFL_NOOP;
+}
+
+vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl) {
+  if (dl && dl->instance)
+  {
+    for (size_t i = VKFL_GLOBAL_MAX; i < VKFL_COMMAND_COUNT; ++i)
+    {
+      dl->pfns[i] = nullptr;
+    }
+    dl->loaded_device = nullptr;
+    dl->loaded_instance = nullptr;
+    return VKFL_SUCCESS;
+  }
+  return VKFL_NOOP;
+}
+
+VkInstance vkfl_loaded_instance(const struct vkfl_loader *const dl) {
+  if (!dl)
+  {
+    return nullptr;
+  }
+  return dl->loaded_instance;
+}
+
+VkDevice vkfl_loaded_device(const struct vkfl_loader *const dl) {
+  if (!dl)
+  {
+    return nullptr;
+  }
+  return dl->loaded_device;
+}
+vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const vkfl_command cmd) {
+  if (!dl)
+  {
+    return nullptr;
+  }
+  return dl->pfns[cmd];
+}

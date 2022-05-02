@@ -76,42 +76,74 @@ def commands_str(commands):
         result += f'\t\t{name[2:]},{os.linesep}'
     return result.strip().expandtabs(2)
 
+def to_upper_snake(s: str):
+    result = ''
+    last_was_lower = False;
+    for c in s:
+        if last_was_lower and c.isupper():
+            result += '_' + c
+        else:
+            result += c.upper()
+        last_was_lower = True if c.islower() else False
+    return result
+
+def c_commands_str(commands):
+    result = ''
+    for command in commands:
+        name = command['name']
+        result += f'\t\tVKFL_COMMAND_{name[2:]},{os.linesep}'
+    return result.strip().expandtabs(2)
+
 def command_count_str(commands):
     return str(len(commands))
 
-def defines_str(apis, exts):
+def defines_str(apis, exts, generate_extra_defines: bool):
     result = ''
     for api in apis:
         symbol = api.replace('VK_VERSION', 'VKFL_API').upper() + '_ENABLED'
-        result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
+        if apis[api]['enabled'] or generate_extra_defines:
+            result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
     for ext in exts:
         symbol = ext.replace('VK', 'VKFL', 1).upper()
-        result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
-        if exts[ext]['enabled']:
-            sym_name = f'{symbol}_EXTENSION_NAME'
-            result += f'#define {sym_name} \"{ext}\"{os.linesep}'
-            sym_version = f'{symbol}_SPEC_VERSION'
-            result += f"#define {sym_version} {exts[ext]['version']}{os.linesep}"
+        if exts[ext]['enabled'] or generate_extra_defines:
+            result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
+            if exts[ext]['enabled'] and generate_extra_defines:
+                sym_name = f'{symbol}_EXTENSION_NAME'
+                result += f'#define {sym_name} \"{ext}\"{os.linesep}'
+                sym_version = f'{symbol}_SPEC_VERSION'
+                result += f"#define {sym_version} {exts[ext]['version']}{os.linesep}"
     time = datetime.utcnow()
     result += f'#define VKFL_BUILD_DATE {time.year}{time.month:02}{time.day:02}ULL{os.linesep}'
     result += f'#define VKFL_BUILD_TIME {time.hour}{time.minute:02}{time.second:02}ULL{os.linesep}'
-    return result.rstrip()
+    return result.rstrip().expandtabs(2)
 
-def private_defines_str(global_commands, instance_commands, device_commands):
+def common_private_defines(global_commands, instance_commands, device_commands):
     result = ''
     result += f'#define VKFL_GLOBAL_MAX {len(global_commands)}{os.linesep}'
     result += f'#define VKFL_INSTANCE_MAX (VKFL_GLOBAL_MAX + {len(instance_commands)}){os.linesep}'
-    result += f'#define VKFL_DEVICE_MAX (VKFL_INSTANCE_MAX + {len(device_commands)})'
-    return result.rstrip()
+    result += f'#define VKFL_DEVICE_MAX (VKFL_INSTANCE_MAX + {len(device_commands)}){os.linesep}'
+    result += f'#define VKFL_STRING(s) (#s){os.linesep}'
+    return result
 
-def loader_str(commands):
+def private_defines_str(global_commands, instance_commands, device_commands):
+    result = common_private_defines(global_commands, instance_commands, device_commands)
+    result += f'#define VKFL(cmd) (m_pfns[static_cast<std::size_t>(command::cmd)] = '
+    result += f'context_loader(context, VKFL_STRING(vk##cmd))){os.linesep}'
+    return result.rstrip().expandtabs(2)
+
+def c_private_defines_str(global_commands, instance_commands, device_commands):
+    result = common_private_defines(global_commands, instance_commands, device_commands)
+    result += f'#define VKFL(cmd) (dl->pfns[VKFL_COMMAND_##cmd] = context_loader(context, VKFL_STRING(vk##cmd)))'
+    return result.rstrip().expandtabs(2)
+
+def loader_str(commands, is_macro: bool):
     result = ''
+    lineend = '\\' if is_macro else ''
     for command in commands:
         name = command['name']
         if name == 'vkGetInstanceProcAddr':
             continue
-        result += f'\t\tm_pfns[static_cast<std::size_t>(command::{name[2:]})] = '
-        result += f'context_loader(context, "{name}");{os.linesep}'
+        result += f'\t\tVKFL({name[2:]});{lineend}{os.linesep}'
     return result.rstrip().expandtabs(2)
 
 def header_version_str(tree):
@@ -122,6 +154,7 @@ def enabled_by_any(check_features: set[str], features: dict):
     for key in check_features:
         res = res or features[key]['enabled']
     return res
+
 def version_cmp(ver1: list[str], ver2: list[str]):
     major = int(ver1[0]) - int(ver2[0])
     if major == 0:
@@ -132,15 +165,20 @@ VK_SPEC = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/v
 
 parser = ArgumentParser()
 parser.add_argument('--spec', type=str, default=VK_SPEC,
-                    help='Specifies the URI to load the XML Vulkan specification from.')
+                    help='Specifies the URI to load the XML Vulkan specification from. Defaults to \"' +
+                         VK_SPEC + '\".')
 parser.add_argument('--extensions', type=str, default='all',
-                    help='A comma separated list of Vulkan extensions to include in the loader.' +
-                         'This may also be the special value \"all\".')
+                    help='A comma separated list of Vulkan extensions to include in the loader. ' +
+                         'This may also be the special value \"all\". Defaults to \"all\".')
 parser.add_argument('--api', type=str, default='latest',
-                    help='The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.).'
-                         'This may also be the special value \"latest\".')
-parser.add_argument('INPUT', type=str)
-parser.add_argument('OUTPUT', type=str)
+                    help='The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.). ' +
+                         'This may also be the special value \"latest\". Defaults to \"latest\".')
+parser.add_argument('--generate-extra-defines', const=True, action='store_const', default=False,
+                    help='Enable the generation of \"VKFL_EXTORAPINAME_ENABLED\" definitions with a value of 0 ' +
+                         '(disabled) as well as \"VKFL_EXTNAME_EXTENSION_NAME\" and \"VKFL_EXTNAME_SPEC_VERSION\" ' +
+                         'symbols. This is disabled by default.')
+parser.add_argument('INPUT', type=str, help='A path to an input template file.')
+parser.add_argument('OUTPUT', type=str, help='A path to an output file.')
 args = parser.parse_args()
 tree = parse_xml(args.spec)
 input_exts = set(args.extensions.split(','))
@@ -154,6 +192,7 @@ if args.api == 'latest':
     use_latest_api = True
 else:
     api_version = args.api.split('.')
+generate_extra_defines = args.generate_extra_defines
 apis = { }
 vk_types = { }
 for vk_type in tree.findall('types/type'):
@@ -203,7 +242,6 @@ vk_instance_commands = [ ]
 vk_device_commands = [ ]
 for vk_command in vk_commands:
     command = vk_commands[vk_command]
-#    if not apis.keys().isdisjoint(command['used_by_apis']) or not exts.keys().isdisjoint(command['used_by_exts']):
     if enabled_by_any(command['used_by_apis'], apis) or enabled_by_any(command['used_by_exts'], exts):
         if command['loaded_from'] == LD_GLOBAL:
             vk_global_commands.append(command)
@@ -220,12 +258,16 @@ with open(args.INPUT, 'rb') as file:
 text = text.replace('@commands@', commands_str(vk_all_commands))
 text = text.replace('@commands_count@', command_count_str(vk_all_commands))
 text = text.replace('@header_version@', header_version_str(tree))
-text = text.replace('@load_global@', loader_str(vk_global_commands))
-text = text.replace('@load_instance@', loader_str(vk_instance_commands))
-text = text.replace('@load_device@', loader_str(vk_device_commands))
-text = text.replace('@defines@', defines_str(apis, exts))
+text = text.replace('@load_global@', loader_str(vk_global_commands, False))
+text = text.replace('@load_instance@', loader_str(vk_instance_commands, False))
+text = text.replace('@load_device@', loader_str(vk_device_commands, False))
+text = text.replace('@load_device_macro@', loader_str(vk_device_commands, True))
+text = text.replace('@defines@', defines_str(apis, exts, generate_extra_defines))
 text = text.replace('@private_defines@',
                     private_defines_str(vk_global_commands, vk_instance_commands, vk_device_commands))
+text = text.replace('@c_commands@', c_commands_str(vk_all_commands))
+text = text.replace('@c_private_defines@', c_private_defines_str(vk_global_commands, vk_instance_commands,
+                                                                 vk_device_commands))
 with open(args.OUTPUT, 'wb') as file:
     file.truncate()
     file.write(bytes(text, 'utf-8'))

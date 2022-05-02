@@ -1,7 +1,7 @@
 project(
   'vkfl',
   [ 'c', 'cpp' ],
-  version: '1.1.1',
+  version: '1.2.0',
   license: 'Apache-2.0',
   default_options: [
     'c_std=c18',
@@ -14,22 +14,40 @@ project(
   ]
 )
 
-specification = '--spec=@0@'.format(get_option('specification'))
-api_version = '--api=@0@'.format(get_option('api'))
-extensions = '--extensions='
-foreach extension : get_option('extensions')
-  extensions += '@0@,'.format(extension)
-endforeach
-generator_command = [ find_program('tools/generate.py'), specification, api_version, extensions, '@INPUT@',
-                      '@OUTPUT@' ]
-
-header = custom_target('header', command: generator_command, input: 'include/vkfl.hpp.in',
-                       output: '@BASENAME@')
-source = custom_target('source', command: generator_command, input: 'src/vkfl.cpp.in',
-                       output: '@BASENAME@')
-
-vkfl_dep = declare_dependency(sources: [ header, source ])
-
+generator_args = [ ]
+if get_option('specification') != 'default'
+  generator_args += '--spec=@0@'.format(get_option('specification'))
+endif
+if get_option('api') != 'latest'
+  generator_args += '--api=@0@'.format(get_option('api'))
+endif
+extension_arr = get_option('extensions')
+if extension_arr.length() != 0
+  if extension_arr[0] != 'all'
+    extensions = '--extensions="'
+    foreach extension : get_option('extensions')
+      extensions += '@0@,'.format(extension)
+    endforeach
+    extensions += '"'
+    generator_args += extensions
+  endif
+else
+  generator_args += '--extensions=""'
+endif
+if get_option('enable_extra_defines')
+  generator_args += '--generate-extra-defines'
+endif
+generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
+cpp_header = custom_target('cpp_header', command: generator_command, input: 'include/vkfl.hpp.in',
+                           output: '@BASENAME@', build_by_default: true)
+cpp_source = custom_target('cpp_source', command: generator_command, input: 'src/vkfl.cpp.in',
+                           output: '@BASENAME@', build_by_default: true)
+vkfl_cpp_dep = declare_dependency(sources: [ cpp_header, cpp_source ])
+c_header = custom_target('c_header', command: generator_command, input: 'include/vkfl.h.in', output: '@BASENAME@',
+                         build_by_default: true)
+c_source = custom_target('c_source', command: generator_command, input: 'src/vkfl.c.in', output: '@BASENAME@',
+                         build_by_default: true)
+vkfl_c_dep = declare_dependency(sources: [ c_header, c_source ])
 vulkan_dep = dependency('vulkan', required: false, disabler: true)
 
 subdir('test')
