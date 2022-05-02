@@ -90,8 +90,7 @@ def defines_str(apis, exts, generate_extra_defines: bool):
     result = ''
     for api in apis:
         symbol = api.replace('VK_VERSION', 'VKFL_API').upper() + '_ENABLED'
-        if apis[api]['enabled'] or generate_extra_defines:
-            result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
+        result += f"#define {symbol} {1 if apis[api]['enabled'] else 0}{os.linesep}"
     for ext in exts:
         symbol = ext.replace('VK', 'VKFL', 1).upper()
         result += f"#define {symbol}_ENABLED {1 if exts[ext]['enabled'] else 0}{os.linesep}"
