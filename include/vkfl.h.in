@@ -31,7 +31,7 @@ extern "C" {
 
 #define VKFL_DEFINE_HANDLE(object) \
   struct object##_T; \
-  typedef struct object##_T* object;
+  typedef struct object##_T* object
 
 VKFL_DEFINE_HANDLE(VkInstance);
 VKFL_DEFINE_HANDLE(VkDevice);
@@ -69,7 +69,7 @@ VKFL_DEFINE_HANDLE(VkDevice);
 enum vkfl_constant {
   VKFL_HEADER_VERSION = @header_version@,
   VKFL_COMMAND_COUNT = @commands_count@
-}
+};
 
 enum vkfl_command {
   @c_commands@
@@ -103,14 +103,14 @@ void vkfl_destroy_loader(struct vkfl_loader *const dl, const struct vkfl_allocat
 struct vkfl_loader* vkfl_copy_loader(const struct vkfl_loader *const dl,
                                      const struct vkfl_allocation_callbacks* const alloc);
 
-vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context);
-vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context);
-vkfl_result vkfl_unload_device(struct vkfl_loader *const dl);
-vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl);
+enum vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context);
+enum vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context);
+enum vkfl_result vkfl_unload_device(struct vkfl_loader *const dl);
+enum vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl);
 
 VkInstance vkfl_loaded_instance(const struct vkfl_loader *const dl);
 VkDevice vkfl_loaded_device(const struct vkfl_loader *const dl);
-vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const vkfl_command cmd);
+vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const enum vkfl_command cmd);
 
 #ifdef __cplusplus
 }

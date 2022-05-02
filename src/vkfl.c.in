@@ -54,9 +54,9 @@ struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn glob
     return NULL;
   }
   vkfl_get_instance_proc_addr_fn context_loader = global;
-  VkInstance context = nullptr;
+  VkInstance context = NULL;
 @load_global@
-  dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR] = global;
+  dl->pfns[VKFL_COMMAND_GetInstanceProcAddr] = (vkfl_any_fn) global;
   return dl;
 }
 
@@ -94,12 +94,12 @@ struct vkfl_loader* vkfl_copy_loader(const struct vkfl_loader *const dl,
   return copy;
 }
 
-vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context) {
+enum vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance context) {
   if (!dl)
   {
     return VKFL_NOOP;
   }
-  if (!dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR])
+  if (!dl->pfns[VKFL_COMMAND_GetInstanceProcAddr])
   {
     return VKFL_ERROR_BAD_LOAD_ORDER;
   }
@@ -107,20 +107,21 @@ vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstance co
   {
     return VKFL_ERROR_INSTANCE_IS_NULL;
   }
-  vkfl_get_instance_proc_addr_fn context_loader = dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR];
+  vkfl_get_instance_proc_addr_fn context_loader =
+    (vkfl_get_instance_proc_addr_fn) dl->pfns[VKFL_COMMAND_GetInstanceProcAddr];
 @load_instance@
   VKFL_LOAD_DEVICE
   dl->loaded_instance = context;
-  dl->loaded_device = nullptr;
+  dl->loaded_device = NULL;
   return VKFL_SUCCESS;
 }
 
-vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context) {
+enum vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice context) {
   if (!dl)
   {
     return VKFL_NOOP;
   }
-  if (!dl->pfns[VKFL_COMMAND_GET_INSTANCE_PROC_ADDR] || !dl->loaded_instance)
+  if (!dl->pfns[VKFL_COMMAND_GetInstanceProcAddr] || !dl->loaded_instance)
   {
     return VKFL_ERROR_BAD_LOAD_ORDER;
   }
@@ -128,12 +129,14 @@ vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice contex
   {
     return VKFL_ERROR_DEVICE_IS_NULL;
   }
+  vkfl_get_device_proc_addr_fn context_loader =
+    (vkfl_get_device_proc_addr_fn) dl->pfns[VKFL_COMMAND_GetDeviceProcAddr];
   VKFL_LOAD_DEVICE
   dl->loaded_device = context;
   return VKFL_SUCCESS;
 }
 
-vkfl_result vkfl_unload_device(struct vkfl_loader *const dl) {
+enum vkfl_result vkfl_unload_device(struct vkfl_loader *const dl) {
   if (dl && dl->loaded_device)
   {
     return vkfl_load_instance(dl, dl->loaded_instance);
@@ -141,15 +144,15 @@ vkfl_result vkfl_unload_device(struct vkfl_loader *const dl) {
   return VKFL_NOOP;
 }
 
-vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl) {
-  if (dl && dl->instance)
+enum vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl) {
+  if (dl && dl->loaded_instance)
   {
     for (size_t i = VKFL_GLOBAL_MAX; i < VKFL_COMMAND_COUNT; ++i)
     {
-      dl->pfns[i] = nullptr;
+      dl->pfns[i] = NULL;
     }
-    dl->loaded_device = nullptr;
-    dl->loaded_instance = nullptr;
+    dl->loaded_device = NULL;
+    dl->loaded_instance = NULL;
     return VKFL_SUCCESS;
   }
   return VKFL_NOOP;
@@ -158,7 +161,7 @@ vkfl_result vkfl_unload_instance(struct vkfl_loader *const dl) {
 VkInstance vkfl_loaded_instance(const struct vkfl_loader *const dl) {
   if (!dl)
   {
-    return nullptr;
+    return NULL;
   }
   return dl->loaded_instance;
 }
@@ -166,14 +169,15 @@ VkInstance vkfl_loaded_instance(const struct vkfl_loader *const dl) {
 VkDevice vkfl_loaded_device(const struct vkfl_loader *const dl) {
   if (!dl)
   {
-    return nullptr;
+    return NULL;
   }
   return dl->loaded_device;
 }
-vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const vkfl_command cmd) {
+
+vkfl_any_fn vkfl_get(const struct vkfl_loader *const dl, const enum vkfl_command cmd) {
   if (!dl)
   {
-    return nullptr;
+    return NULL;
   }
   return dl->pfns[cmd];
 }
