@@ -37,6 +37,7 @@ from urllib.request import urlopen
 from xml.etree import ElementTree as etree
 from argparse import ArgumentParser
 from datetime import datetime
+from pathlib import Path
 
 def parse_xml(path):
     file = urlopen(path) if path.startswith('http') else open(path, 'r')
@@ -148,26 +149,34 @@ def version_cmp(ver1: list[str], ver2: list[str]):
         return int(ver1[1]) - int(ver2[1])
     return major
 
+def comma_separated(s: str):
+    res = set()
+    for value in s.split(','):
+        if len(value) > 0:
+            res.add(value.replace('\"', '').replace('\'', ''))
+    return res
+
+
 VK_SPEC = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml'
 
 parser = ArgumentParser()
-parser.add_argument('--spec', type=str, default=VK_SPEC,
+parser.add_argument('--spec', default=VK_SPEC,
                     help='Specifies the URI to load the XML Vulkan specification from. Defaults to \"' +
                          VK_SPEC + '\".')
-parser.add_argument('--extensions', type=str, default='all',
+parser.add_argument('--extensions', type=comma_separated, default='all',
                     help='A comma separated list of Vulkan extensions to include in the loader. ' +
                          'This may also be the special value \"all\". Defaults to \"all\".')
-parser.add_argument('--api', type=str, default='latest',
+parser.add_argument('--api', default='latest',
                     help='The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.). ' +
                          'This may also be the special value \"latest\". Defaults to \"latest\".')
 parser.add_argument('--generate-extra-defines', const=True, action='store_const', default=False,
                     help='Enable the generation of \"VKFL_X_EXTENSION_NAME\" and \"VKFL_X_SPEC_VERSION\" symbols. ' +
                          'This is disabled by default.')
-parser.add_argument('INPUT', type=str, help='A path to an input template file.')
-parser.add_argument('OUTPUT', type=str, help='A path to an output file.')
+parser.add_argument('INPUT', type=Path, help='A path to an input template file.')
+parser.add_argument('OUTPUT', type=Path, help='A path to an output file.')
 args = parser.parse_args()
 tree = parse_xml(args.spec)
-input_exts = set(args.extensions.split(','))
+input_exts = args.extensions
 use_all_exts = False
 if 'all' in input_exts:
     use_all_exts = True

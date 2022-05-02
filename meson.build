@@ -24,11 +24,10 @@ endif
 extension_arr = get_option('extensions')
 if extension_arr.length() != 0
   if extension_arr[0] != 'all'
-    extensions = '--extensions="'
+    extensions = '--extensions='
     foreach extension : get_option('extensions')
       extensions += '@0@,'.format(extension)
     endforeach
-    extensions += '"'
     generator_args += extensions
   endif
 else
