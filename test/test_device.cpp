@@ -26,21 +26,17 @@
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
   auto app_info = VkApplicationInfo{ };
-  std::memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  {
-#if defined(VKFL_USE_API_1_1)
-    auto pfn = VKFL_GET_PFN(ld, EnumerateInstanceVersion);
-    assert(pfn != nullptr);
-    auto res = pfn(&app_info.apiVersion);
-    assert(res == VK_SUCCESS);
-    (void) res;
+#if defined(VKFL_API_1_3_ENABLED) && VKFL_API_1_3_ENABLED
+  app_info.apiVersion = VK_API_VERSION_1_3;
+#elif defined(VKFL_API_1_2_ENABLED) && VKFL_API_1_2_ENABLED
+  app_info.apiVersion = VK_API_VERSION_1_2;
+#elif defined(VKFL_API_1_1_ENABLED) && VKFL_API_1_1_ENABLED
+  app_info.apiVersion = VK_API_VERSION_1_1;
 #else
-    app_info.apiVersion = VK_VERSION_1_0;
+  app_info.apiVersion = VK_API_VERSION_1_0;
 #endif
-  }
   auto instance_info = VkInstanceCreateInfo{ };
-  std::memset(&instance_info, 0, sizeof(VkInstanceCreateInfo));
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   instance_info.pApplicationInfo = &app_info;
   auto instance = VkInstance{ };
@@ -53,7 +49,6 @@ int main() {
   }
   ld.load(instance);
   auto device_info = VkDeviceCreateInfo{ };
-  std::memset(&device_info, 0, sizeof(VkDeviceCreateInfo));
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   auto pdev = VkPhysicalDevice{ };
   {
@@ -79,5 +74,15 @@ int main() {
   assert(new_pfn != old_pfn);
   (void) old_pfn;
   (void) new_pfn;
+  {
+    auto pfn = VKFL_GET_PFN(ld, DestroyDevice);
+    assert(pfn != nullptr);
+    pfn(device, nullptr);
+  }
+  {
+    auto pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    assert(pfn != nullptr);
+    pfn(instance, nullptr);
+  }
   return 0;
 }

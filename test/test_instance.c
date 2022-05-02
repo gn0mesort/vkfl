@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Alexander Rothman
+ * Copyright 2022 Alexander Rothman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <stddef.h>
+#include <string.h>
 
 #include <vulkan/vulkan.h>
 
-#include "vkfl.hpp"
+#include "vkfl.h"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) ((PFN_vk##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
 
 int main() {
-  auto ld = vkfl::loader{ vkGetInstanceProcAddr };
-  auto app_info = VkApplicationInfo{ };
+  struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
+  assert(ld != NULL);
+  VkApplicationInfo app_info;
+  memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 #if defined(VKFL_API_1_3_ENABLED) && VKFL_API_1_3_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_3;
@@ -35,24 +38,26 @@ int main() {
 #else
   app_info.apiVersion = VK_API_VERSION_1_0;
 #endif
-  auto instance_info = VkInstanceCreateInfo{ };
+  VkInstanceCreateInfo instance_info;
+  memset(&instance_info, 0, sizeof(VkInstanceCreateInfo));
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   instance_info.pApplicationInfo = &app_info;
-  auto instance = VkInstance{ };
+  VkInstance instance;
   {
-    auto pfn = VKFL_GET_PFN(ld, CreateInstance);
-    assert(pfn != nullptr);
-    auto res = pfn(&instance_info, nullptr, &instance);
+    PFN_vkCreateInstance pfn = VKFL_GET_PFN(ld, CreateInstance);
+    assert(pfn != NULL);
+    VkResult res = pfn(&instance_info, NULL, &instance);
     assert(res == VK_SUCCESS);
     (void) res;
   }
-  ld.load(instance);
-  assert(VKFL_GET_PFN(ld, GetDeviceProcAddr) != nullptr);
-  assert(VKFL_GET_PFN(ld, GetDeviceQueue) != nullptr);
+  assert(vkfl_load_instance(ld, instance) >= 0);
+  assert(VKFL_GET_PFN(ld, GetDeviceProcAddr) != NULL);
+  assert(VKFL_GET_PFN(ld, GetDeviceQueue) != NULL);
   {
-    auto pfn = VKFL_GET_PFN(ld, DestroyInstance);
-    assert(pfn != nullptr);
-    pfn(instance, nullptr);
+    PFN_vkDestroyInstance pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    assert(pfn != NULL);
+    pfn(instance, NULL);
   }
+  vkfl_destroy_loader(ld, NULL);
   return 0;
 }
