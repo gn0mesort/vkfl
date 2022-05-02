@@ -99,10 +99,6 @@ enum vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstan
   {
     return VKFL_NOOP;
   }
-  if (!dl->pfns[VKFL_COMMAND_GetInstanceProcAddr])
-  {
-    return VKFL_ERROR_BAD_LOAD_ORDER;
-  }
   if (!context)
   {
     return VKFL_ERROR_INSTANCE_IS_NULL;

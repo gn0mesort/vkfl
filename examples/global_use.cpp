@@ -87,17 +87,21 @@ int main() {
 
     // Retrieve instance version
     auto instance_version = std::uint32_t{ 0 };
+#if defined(VKFL_API_1_1_ENABLED) && VKFL_API_1_1_ENABLED
     if (auto res = vkEnumerateInstanceVersion(&instance_version); res != VK_SUCCESS)
     {
       throw std::runtime_error{ "Failed to retrieve Vulkan instance version." };
     }
+#else
+    instance_version = VK_API_VERSION_1_0;
+#endif
     std::cout << "Vulkan Instance Version: v" << VK_API_VERSION_MAJOR(instance_version);
     std::cout << "." << VK_API_VERSION_MINOR(instance_version) << "." << VK_API_VERSION_PATCH(instance_version);
     std::cout << std::endl;
     // Create Instance
     auto app_info = VkApplicationInfo{ };
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.applicationVersion = VK_API_VERSION_1_0;
+    app_info.apiVersion = VK_API_VERSION_1_1;
     auto instance_info = VkInstanceCreateInfo{ };
     instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instance_info.pApplicationInfo = &app_info;
