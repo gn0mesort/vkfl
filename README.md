@@ -85,6 +85,9 @@ implementation. While these are largely the same they are not necessarily relate
 both implementations at the same time. In any case, `vkfl::loader` and `vkfl_loader` are not guaranteed to be binary
 compatible.
 
+By default both C and C++ implementations are built. To disable one or the other you can configure meson with
+`-Denable_c=false` or `-Denable_cpp=false` respectively.
+
 ## Building Tests and Examples
 
 By default test targets and example targets are disabled. To enable tests ensure that you have a build directory
@@ -98,6 +101,13 @@ meson configure build -Denable_examples=true
 ```
 The `example/global_use.cpp` and `example/global_use.c` files require `dlfcn.h`, `dlopen`, `dlclose`, and `dlsym` to
 compile (i.e. they won't compile on Windows).
+
+## Building Documentation
+
+HTML documentation requires [Doxygen](https://www.doxygen.nl/) and can be built with the following:
+```sh
+ninja -C build documentation
+```
 
 ## Acknowledgements
 
