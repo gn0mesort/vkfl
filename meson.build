@@ -37,17 +37,32 @@ if get_option('enable_extra_defines')
   generator_args += '--generate-extra-defines'
 endif
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
-cpp_header = custom_target('cpp_header', command: generator_command, input: 'include/vkfl.hpp.in',
-                           output: '@BASENAME@', build_by_default: true)
-cpp_source = custom_target('cpp_source', command: generator_command, input: 'src/vkfl.cpp.in',
-                           output: '@BASENAME@', build_by_default: true)
-vkfl_cpp_dep = declare_dependency(sources: [ cpp_header, cpp_source ])
-c_header = custom_target('c_header', command: generator_command, input: 'include/vkfl.h.in', output: '@BASENAME@',
-                         build_by_default: true)
-c_source = custom_target('c_source', command: generator_command, input: 'src/vkfl.c.in', output: '@BASENAME@',
-                         build_by_default: true)
-vkfl_c_dep = declare_dependency(sources: [ c_header, c_source ])
+doc_deps = [ ]
+if get_option('enable_cpp')
+  cpp_header = custom_target('cpp_header', command: generator_command, input: 'include/vkfl.hpp.in',
+                             output: '@BASENAME@', build_by_default: true)
+  cpp_source = custom_target('cpp_source', command: generator_command, input: 'src/vkfl.cpp.in',
+                             output: '@BASENAME@', build_by_default: true)
+  vkfl_cpp_dep = declare_dependency(sources: [ cpp_header, cpp_source ])
+  doc_deps += [ cpp_header, cpp_source ]
+endif
+if get_option('enable_c')
+  c_header = custom_target('c_header', command: generator_command, input: 'include/vkfl.h.in', output: '@BASENAME@',
+                           build_by_default: true)
+  c_source = custom_target('c_source', command: generator_command, input: 'src/vkfl.c.in', output: '@BASENAME@',
+                           build_by_default: true)
+  vkfl_c_dep = declare_dependency(sources: [ c_header, c_source ])
+  doc_deps += [ c_header, c_source ]
+endif
+
+doxygen = find_program('doxygen', required: false, disabler: true)
+vkfl_docs = run_target('documentation', command: [ doxygen, files('Doxyfile') ], depends: doc_deps)
+
 vulkan_dep = dependency('vulkan', required: false, disabler: true)
 
-subdir('test')
-subdir('examples')
+if get_option('enable_tests')
+  subdir('test')
+endif
+if get_option('enable_examples')
+  subdir('examples')
+endif
