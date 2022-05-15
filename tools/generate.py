@@ -33,16 +33,15 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 import os
-from urllib.request import urlopen
-from xml.etree import ElementTree as etree
-from argparse import ArgumentParser
+import sys
+from xml.etree import ElementTree
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from datetime import datetime
 from pathlib import Path
 
-def parse_xml(path):
-    file = urlopen(path) if path.startswith('http') else open(path, 'r')
-    with file:
-        return etree.parse(file)
+def parse_xml(path: Path):
+    with open(path, 'r') as file:
+        return ElementTree.parse(file)
 
 def is_descendent(vk_types, name, base):
     if name == base:
@@ -156,13 +155,42 @@ def comma_separated(s: str):
             res.add(value.replace('\"', '').replace('\'', ''))
     return res
 
+def spec_path(search_paths: list[Path]):
+    for search_path in search_paths:
+        if not search_path:
+            continue
+        registry = search_path.absolute().joinpath('share/vulkan/registry/vk.xml')
+        if registry.exists() and registry.is_file():
+            return registry
+    return Path.cwd().joinpath('vk.xml').absolute()
 
-VK_SPEC = 'https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml'
+default_spec = ''
+if sys.platform == 'win32' or sys.platform == 'cygwin':
+    default_spec = spec_path([ os.environ['VULKAN_SDK'], os.environ['VULKAN_SDK_PATH'] ])
+# It's not clear to me that this is adequate with regard to Apple environments. Documentation for the LunarG
+# Vulkan SDK indicates that the registry should be located at $VULKAN_SDK/share/registry/vk.xml as it is on Linux.
+# Hopefully, using the same search as a Linux system is adequate.
+else:
+    default_spec = spec_path([ Path(os.environ['VULKAN_SDK']), Path.home().joinpath('.local'), Path('/usr/local'),
+                               Path('/usr') ])
+epilog = """
+If a specification path is not explicitly provided, the following locations are searched.
+Unix-like systems:
+\t$VULKAN_SDK/share/vulkan/registry/vk.xml
+\t$HOME/.local/share/vulkan/registry/vk.xml
+\t/usr/local/share/vulkan/registry/vk.xml
+\t/usr/share/vulkan/registry/vk.xml
+\t$PWD/vk.xml
+Windows systems:
+\t%VULKAN_SDK%/share/vulkan/registry/vk.xml
+\t%VULKAN_SDK_PATH%/share/vulkan/registry/vk.xml
+\t%CD%/vk.xml
+"""
+parser = ArgumentParser(epilog=epilog, formatter_class=RawDescriptionHelpFormatter)
 
-parser = ArgumentParser()
-parser.add_argument('--spec', default=VK_SPEC,
-                    help='Specifies the URI to load the XML Vulkan specification from. Defaults to \"' +
-                         VK_SPEC + '\".')
+parser.add_argument('--spec', default=default_spec, type=Path, help='A file path to an XML specification of the ' +
+                    'Vulkan API. If this isn\'t provided, the script will default to searching a set of standard ' +
+                    'paths for vk.xml.')
 parser.add_argument('--extensions', type=comma_separated, default='all',
                     help='A comma separated list of Vulkan extensions to include in the loader. ' +
                          'This may also be the special value \"all\". Defaults to \"all\".')

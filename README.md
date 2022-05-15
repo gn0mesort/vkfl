@@ -65,12 +65,24 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --spec SPEC           Specifies the URI to load the XML Vulkan specification from. Defaults to "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Docs/main/xml/vk.xml".
+  --spec SPEC           A file path to an XML specification of the Vulkan API. If this isn't provided, the script will default to searching a set of standard paths for vk.xml.
   --extensions EXTENSIONS
                         A comma separated list of Vulkan extensions to include in the loader. This may also be the special value "all". Defaults to "all".
   --api API             The latest Vulkan API version to include in the loader (i.e. 1.0, 1.1, 1.2, etc.). This may also be the special value "latest". Defaults to "latest".
   --generate-extra-defines
                         Enable the generation of "VKFL_X_EXTENSION_NAME" and "VKFL_X_SPEC_VERSION" symbols. This is disabled by default.
+
+If a specification path is not explicitly provided, the following locations are searched.
+Unix-like systems:
+  $VULKAN_SDK/share/vulkan/registry/vk.xml
+  $HOME/.local/share/vulkan/registry/vk.xml
+  /usr/local/share/vulkan/registry/vk.xml
+  /usr/share/vulkan/registry/vk.xml
+  $PWD/vk.xml
+Windows systems:
+  %VULKAN_SDK%/share/vulkan/registry/vk.xml
+  %VULKAN_SDK_PATH%/share/vulkan/registry/vk.xml
+  %CD%/vk.xml
 ```
 It's possible to use the generator with any input file. However, [`include/vkfl.hpp.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.hpp.in) and
 [`src/vkfl.cpp.in`](https://github.com/gn0mesort/vkfl/blob/master/src/vkfl.cpp.in) are intended to generate the canonical C++ implementation. Similarly,

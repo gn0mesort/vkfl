@@ -1,7 +1,7 @@
 option('api', type: 'string', value: 'latest', description: 'The Vulkan API version to generate.')
 option('extensions', type: 'array', value: [ 'all' ], description: 'A set of Vulkan extensions to include.')
 option('specification', type: 'string', value: 'default',
-       description: 'A path indicating the location of the desired Vulkan specification (XML) to generate a loader from. May also be the special value "default" which selects the default specification.')
+       description: 'A path indicating the location of the desired Vulkan specification. This may also be the special value "default" which selects the default specification.')
 option('enable_cpp', type: 'boolean', value: true, description: 'Whether or not to build C++ header and source files')
 option('enable_c', type: 'boolean', value: true, description: 'Whether or not to build C header and source files')
 option('enable_tests', type: 'boolean', value: false, description: 'Whether or not to build tests')
