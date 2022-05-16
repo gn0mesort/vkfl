@@ -37,6 +37,8 @@ endif
 if get_option('enable_extra_defines')
   generator_args += '--generate-extra-defines'
 endif
+# Check for Python3
+find_program('python3')
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
 doc_deps = [ ]
 if get_option('enable_cpp')

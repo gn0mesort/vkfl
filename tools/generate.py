@@ -187,7 +187,6 @@ Windows systems:
 \t%CD%/vk.xml
 """
 parser = ArgumentParser(epilog=epilog, formatter_class=RawDescriptionHelpFormatter)
-
 parser.add_argument('--spec', default=default_spec, type=Path, help='A file path to an XML specification of the ' +
                     'Vulkan API. If this isn\'t provided, the script will default to searching a set of standard ' +
                     'paths for vk.xml.')
