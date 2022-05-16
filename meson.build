@@ -16,7 +16,8 @@ project(
 
 generator_args = [ ]
 if get_option('specification') != 'default'
-  generator_args += '--spec=@0@'.format(get_option('specification'))
+  spec_file = files(get_option('specification'))[0]
+  generator_args += '--spec=@0@'.format(spec_file)
 endif
 if get_option('api') != 'latest'
   generator_args += '--api=@0@'.format(get_option('api'))
@@ -58,7 +59,7 @@ endif
 doxygen = find_program('doxygen', required: false, disabler: true)
 vkfl_docs = run_target('documentation', command: [ doxygen, files('Doxyfile') ], depends: doc_deps)
 
-vulkan_dep = dependency('vulkan', required: false, disabler: true)
+vulkan_dep = dependency('vulkan', required: false, disabler: true, version: '>=1.0.0')
 
 if get_option('enable_tests')
   subdir('test')
