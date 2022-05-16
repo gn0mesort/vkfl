@@ -98,18 +98,18 @@ both implementations at the same time. In any case, `vkfl::loader` and `vkfl_loa
 compatible.
 
 By default both C and C++ implementations are built. To disable one or the other you can configure meson with
-`-Denable_c=false` or `-Denable_cpp=false` respectively.
+`-Dbuild_c=disabled` or `-Dbuild_cpp=disabled` respectively.
 
 ## Building Tests and Examples
 
 By default test targets and example targets are disabled. To enable tests ensure that you have a build directory
 configured and then run:
 ```sh
-meson configure build -Denable_tests=true
+meson configure build -Dbuild_tests=enabled
 ```
 To enable examples run:
 ```sh
-meson configure build -Denable_examples=true
+meson configure build -Dbuild_examples=enabled
 ```
 The `example/global_use.cpp` and `example/global_use.c` files require `dlfcn.h`, `dlopen`, `dlclose`, and `dlsym` to
 compile (i.e. they won't compile on Windows).
