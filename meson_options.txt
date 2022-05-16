@@ -2,8 +2,8 @@ option('api', type: 'string', value: 'latest', description: 'The Vulkan API vers
 option('extensions', type: 'array', value: [ 'all' ], description: 'A set of Vulkan extensions to include.')
 option('specification', type: 'string', value: 'default',
        description: 'A path indicating the location of the desired Vulkan specification. This may also be the special value "default" which selects the default specification.')
-option('enable_cpp', type: 'boolean', value: true, description: 'Whether or not to build C++ header and source files')
-option('enable_c', type: 'boolean', value: true, description: 'Whether or not to build C header and source files')
-option('enable_tests', type: 'boolean', value: false, description: 'Whether or not to build tests')
-option('enable_examples', type: 'boolean', value: false, description: 'Whether or not to build example programs')
-option('enable_extra_defines', type: 'boolean', value: false, description: 'Whether or not to generate extra symbol definitions in vkfl.hpp')
+option('build_cpp', type: 'feature', value: 'enabled', description: 'Whether or not to build C++ header and source files')
+option('build_c', type: 'feature', value: 'enabled', description: 'Whether or not to build C header and source files')
+option('build_tests', type: 'feature', value: 'disabled', description: 'Whether or not to build tests')
+option('build_examples', type: 'feature', value: 'disabled', description: 'Whether or not to build example programs')
+option('generate_extra_defines', type: 'boolean', value: false, description: 'Whether or not to generate extra symbol definitions in vkfl.hpp')
