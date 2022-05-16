@@ -41,23 +41,10 @@ endif
 find_program('python3')
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
 doc_deps = [ ]
-if get_option('build_cpp').enabled()
-  cpp_header = custom_target('cpp_header', command: generator_command, input: 'include/vkfl.hpp.in',
-                             output: '@BASENAME@', build_by_default: true)
-  cpp_source = custom_target('cpp_source', command: generator_command, input: 'src/vkfl.cpp.in',
-                             output: '@BASENAME@', build_by_default: true)
-  vkfl_cpp_dep = declare_dependency(sources: [ cpp_header, cpp_source ])
-  doc_deps += [ cpp_header, cpp_source ]
-endif
-if get_option('build_c').enabled()
-  c_header = custom_target('c_header', command: generator_command, input: 'include/vkfl.h.in', output: '@BASENAME@',
-                           build_by_default: true)
-  c_source = custom_target('c_source', command: generator_command, input: 'src/vkfl.c.in', output: '@BASENAME@',
-                           build_by_default: true)
-  vkfl_c_dep = declare_dependency(sources: [ c_header, c_source ])
-  doc_deps += [ c_header, c_source ]
-endif
-
+vkfl_c_dep = disabler()
+subdir('c')
+vkfl_cpp_dep = disabler()
+subdir('cpp')
 doxygen = find_program('doxygen', required: false, disabler: true)
 vkfl_docs = run_target('documentation', command: [ doxygen, files('Doxyfile') ], depends: doc_deps)
 vulkan_dep = dependency('vulkan',
