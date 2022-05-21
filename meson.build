@@ -14,6 +14,10 @@ project(
   ]
 )
 
+if not (get_option('build_cpp').enabled() and get_option('build_c').enabled())
+  warning('Both C and C++ targets are disabled.')
+endif
+
 generator_args = [ ]
 if get_option('specification') != 'default'
   spec_file = files(get_option('specification'))[0]
