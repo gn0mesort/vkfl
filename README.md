@@ -42,7 +42,7 @@ vkfl_dep = vkfl_proj.get_variable('vkfl_c_dep')
 
 Afterward, just include `vkfl_dep` as a dependency of your project.
 
-vkfl can also be used by generating `vkfl.hpp` and `vkfl.cpp` directly to do this just build the meson project as
+VKFL can also be used by generating `vkfl.hpp` and `vkfl.cpp` directly to do this just build the meson project as
 follows:
 
 ```sh
@@ -73,7 +73,7 @@ For examples of usage in source code see [`examples`](https://github.com/gn0meso
 
 ## Generator Usage
 
-vkfl's generator can be found in [`tools/generate.py`](https://github.com/gn0mesort/vkfl/blob/master/tools/generate.py).
+VKFL's generator can be found in [`tools/generate.py`](https://github.com/gn0mesort/vkfl/blob/master/tools/generate.py).
 The usage is as follows:
 
 ```
@@ -111,7 +111,7 @@ canonical C implementation.
 
 ## C and C++ Implementations
 
-vkfl provides both a C18 (i.e., C11) and a C++20 (although it will probably compile with previous standards too)
+VKFL provides both a C18 (i.e., C11) and a C++20 (although it will probably compile with previous standards too)
 implementation. While these are largely the same they are not necessarily related. You probably shouldn't use
 both implementations at the same time. In any case, `vkfl::loader` and `vkfl_loader` are not guaranteed to be binary
 compatible. Don't assume you can safely `memcpy` between them even if it works.
