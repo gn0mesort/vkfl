@@ -37,7 +37,7 @@ int main() {
   VkApplicationInfo app_info;
   memset(&app_info, 0, sizeof(VkApplicationInfo));
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  app_info.apiVersion = VK_VERSION_1_2;
+  app_info.apiVersion = VK_API_VERSION_1_0;
   VkInstanceCreateInfo instance_info;
   memset(&instance_info, 0, sizeof(VkInstanceCreateInfo));
   instance_info.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;

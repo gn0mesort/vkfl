@@ -29,7 +29,7 @@ int main() {
     auto ld = vkfl::loader{ vkGetInstanceProcAddr };
     auto app_info = VkApplicationInfo{ };
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.apiVersion = VK_VERSION_1_2;
+    app_info.apiVersion = VK_API_VERSION_1_0;
     auto instance_info = VkInstanceCreateInfo{ };
     instance_info.sType = VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO;
     instance_info.pApplicationInfo = &app_info;
