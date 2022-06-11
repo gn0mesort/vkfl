@@ -2,7 +2,7 @@
 
 VKFL is a dynamic command function pointer loader and dispatch table for Vulkan.
 
-While there are plenty of other ways to achieve this I prefer vkfl because:
+While there are plenty of other ways to achieve this I prefer VKFL because:
 
 - VKFL doesn't introduce any global state and namespaces all symbols.
 - VKFL doesn't depend directly on libvulkan or the Vulkan headers.
@@ -24,7 +24,7 @@ I recommend setting up and using a virtual environment prior to installing depen
 
 ## Usage
 
-Once dependencies are installed, the easiest way to include vkfl in a project is as a Meson subproject. This can be 
+Once dependencies are installed, the easiest way to include VKFL in a project is as a Meson subproject. This can be 
 done by placing a copy of this repository under your `subprojects/` directory and adding the following to your build
 file. If you're using C++ simply add the following to your `meson.build`:
 
@@ -50,7 +50,7 @@ meson build
 ninja -C build
 ```
 
-and then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp` for C++ or `build/vkfl.h` and
+Then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp` for C++ or `build/vkfl.h` and
 `build/vkfl.c` for C) into your project.
 
 Finally, you can use the generator script manually. To do this run `tools/generate.py` as follows:
@@ -100,7 +100,7 @@ Unix-like systems:
   /usr/share/vulkan/registry/vk.xml
 Windows systems:
   %VULKAN_SDK%/share/vulkan/registry/vk.xml
-  %VULKAN_SDK_PATH%/share/vulkan/registry/vk.xmlCD%/vk.xml
+  %VULKAN_SDK_PATH%/share/vulkan/registry/vk.xml
 ```
 
 It's possible to use the generator with any input file. However, [`include/vkfl.hpp.in`](https://github.com/gn0mesort/vkfl/blob/master/include/vkfl.hpp.in) and
@@ -145,8 +145,8 @@ HTML documentation requires [Doxygen](https://www.doxygen.nl/) and can be built 
 ninja -C build documentation
 ```
 
-## Acknowledgements
+## Acknowledgments
 
 In earlier versions of VKFL, parts of `generate.py` were based on the equivalent file from 
-[volk](https://github.com/zeux/volk). If you don't like VKFL you should give volk a try instead. Much of the current
+[Volk](https://github.com/zeux/volk). If you don't like VKFL you should give Volk a try instead. Much of the current
 implementation was inspired by similar dispatch table generation scripts found in [Mesa](https://mesa3d.org/).

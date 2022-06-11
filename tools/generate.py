@@ -39,7 +39,7 @@ Unix-like systems:
 Windows systems:
 \t%VULKAN_SDK%/share/vulkan/registry/vk.xml
 \t%VULKAN_SDK_PATH%/share/vulkan/registry/vk.xml
-"""
+""".expandtabs(2)
 parser = ArgumentParser(epilog=epilog, formatter_class=RawDescriptionHelpFormatter)
 parser.add_argument("--spec", type=Path, help="A file path to an XML specification of the " +
                     "Vulkan API. If this isn't provided, the script will default to searching a set of standard " +
