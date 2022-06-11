@@ -1,7 +1,7 @@
 /**
  * @file vkfl.c
  * @author Alexander Rothman <gnomesort@megate.ch>
- * @date June, 10 2022
+ * @date June 10, 2022
  * @copyright Apache-2.0
  * @brief Dynamic Vulkan function pointer loader.
  *
@@ -63,9 +63,11 @@ struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn glob
   vkfl_get_instance_proc_addr_fn context_loader = global;
   VkInstance context = NULL;
 % for command in enabled_global_commands:
-  V(${command});
+% if command != "vkGetInstanceProcAddr":
+    V(${command});
+% endif
 % endfor
-  dl->pfns[VKFL_COMMAND_GetInstanceProcAddr] = (vkfl_any_fn) global;
+  dl->pfns[VKFL_COMMAND_vkGetInstanceProcAddr] = (vkfl_any_fn) global;
   return dl;
 }
 
@@ -117,7 +119,7 @@ enum vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstan
     return VKFL_ERROR_INSTANCE_IS_NULL;
   }
   vkfl_get_instance_proc_addr_fn context_loader =
-    (vkfl_get_instance_proc_addr_fn) dl->pfns[VKFL_COMMAND_GetInstanceProcAddr];
+    (vkfl_get_instance_proc_addr_fn) dl->pfns[VKFL_COMMAND_vkGetInstanceProcAddr];
 % for command in enabled_instance_commands:
   V(${command});
 % endfor
@@ -132,7 +134,7 @@ enum vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice c
   {
     return VKFL_NOOP;
   }
-  if (!dl->pfns[VKFL_COMMAND_GetInstanceProcAddr] || !dl->loaded_instance)
+  if (!dl->pfns[VKFL_COMMAND_vkGetInstanceProcAddr] || !dl->loaded_instance)
   {
     return VKFL_ERROR_BAD_LOAD_ORDER;
   }
@@ -141,7 +143,7 @@ enum vkfl_result vkfl_load_device(struct vkfl_loader *const dl, const VkDevice c
     return VKFL_ERROR_DEVICE_IS_NULL;
   }
   vkfl_get_device_proc_addr_fn context_loader =
-    (vkfl_get_device_proc_addr_fn) dl->pfns[VKFL_COMMAND_GetDeviceProcAddr];
+    (vkfl_get_device_proc_addr_fn) dl->pfns[VKFL_COMMAND_vkGetDeviceProcAddr];
   VKFL_LOAD_DEVICE
   dl->loaded_device = context;
   return VKFL_SUCCESS;

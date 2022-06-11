@@ -35,7 +35,7 @@
 namespace vkfl {
 
   void loader::load_instance_fns(const VkInstance context) {
-    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
+    constexpr auto idx = static_cast<std::size_t>(command::vkGetInstanceProcAddr);
     const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
 % for command in enabled_instance_commands:
     V(${command});
@@ -43,13 +43,13 @@ namespace vkfl {
   }
 
   void loader::load_device_fns(const VkInstance context) {
-    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
+    constexpr auto idx = static_cast<std::size_t>(command::vkGetInstanceProcAddr);
     const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
     VKFL_LOAD_DEVICE
   }
 
   void loader::load_device_fns(const VkDevice context) {
-    constexpr auto idx = static_cast<std::size_t>(command::GetDeviceProcAddr);
+    constexpr auto idx = static_cast<std::size_t>(command::vkGetDeviceProcAddr);
     const auto context_loader = reinterpret_cast<get_device_proc_addr_fn>(m_pfns[idx]);
     VKFL_LOAD_DEVICE
   }
@@ -62,9 +62,11 @@ namespace vkfl {
     const auto context_loader = global;
     const auto context = nullptr;
 % for command in enabled_global_commands:
-    V(${command})
+% if command != "vkGetInstanceProcAddr":
+    V(${command});
+% endif
 % endfor
-    constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
+    constexpr auto idx = static_cast<std::size_t>(command::vkGetInstanceProcAddr);
     m_pfns[idx] = reinterpret_cast<any_fn>(global);
   }
 

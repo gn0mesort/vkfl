@@ -20,7 +20,7 @@
 
 #include "vkfl.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_##cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
@@ -40,17 +40,17 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   auto instance = VkInstance{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, CreateInstance);
+    auto pfn = VKFL_GET_PFN(ld, vkCreateInstance);
     assert(pfn != nullptr);
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
     (void) res;
   }
   ld.load(instance);
-  assert(VKFL_GET_PFN(ld, GetDeviceProcAddr) != nullptr);
-  assert(VKFL_GET_PFN(ld, GetDeviceQueue) != nullptr);
+  assert(VKFL_GET_PFN(ld, vkGetDeviceProcAddr) != nullptr);
+  assert(VKFL_GET_PFN(ld, vkGetDeviceQueue) != nullptr);
   {
-    auto pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    auto pfn = VKFL_GET_PFN(ld, vkDestroyInstance);
     assert(pfn != nullptr);
     pfn(instance, nullptr);
   }

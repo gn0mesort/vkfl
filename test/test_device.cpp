@@ -21,7 +21,7 @@
 
 #include "vkfl.hpp"
 
-#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_vk##cmd>(ld(vkfl::command::cmd)))
+#define VKFL_GET_PFN(ld, cmd) (reinterpret_cast<PFN_##cmd>(ld(vkfl::command::cmd)))
 
 int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
@@ -41,7 +41,7 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   auto instance = VkInstance{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, CreateInstance);
+    auto pfn = VKFL_GET_PFN(ld, vkCreateInstance);
     assert(pfn != nullptr);
     auto res = pfn(&instance_info, nullptr, &instance);
     assert(res == VK_SUCCESS);
@@ -50,37 +50,64 @@ int main() {
   ld.load(instance);
   auto device_info = VkDeviceCreateInfo{ };
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  auto pdev = VkPhysicalDevice{ };
+  auto pdevs = static_cast<VkPhysicalDevice*>(nullptr);
+  auto sz = std::uint32_t{ 0 };
   {
-    auto pfn = VKFL_GET_PFN(ld, EnumeratePhysicalDevices);
+    auto pfn = VKFL_GET_PFN(ld, vkEnumeratePhysicalDevices);
     assert(pfn != nullptr);
-    auto sz = std::uint32_t{ 1 };
-    auto res = pfn(instance, &sz, &pdev);
+    auto res = pfn(instance, &sz, nullptr);
+    assert(res >= 0);
+    (void) res;
+    pdevs = new VkPhysicalDevice[sz];
+    assert(pdevs != nullptr);
+    res = pfn(instance, &sz, pdevs);
     assert(res >= 0);
     (void) res;
   }
+  // Try to select a discrete device if available.
+  // This is to avoid lavapipe.
+  auto pdev = VkPhysicalDevice{ };
+  {
+    auto pfn = VKFL_GET_PFN(ld, vkGetPhysicalDeviceProperties);
+    assert(pfn != nullptr);
+    auto properties = VkPhysicalDeviceProperties{ };
+    for (auto i = std::uint32_t{ 0 }; i < sz; ++i)
+    {
+      vkGetPhysicalDeviceProperties(pdevs[i], &properties);
+      if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+      {
+        pdev = pdevs[i];
+      }
+    }
+    if (pdev == VK_NULL_HANDLE)
+    {
+      pdev = pdevs[0];
+    }
+    delete[] pdevs;
+    pdevs = nullptr;
+  }
   auto device = VkDevice{ };
   {
-    auto pfn = VKFL_GET_PFN(ld, CreateDevice);
+    auto pfn = VKFL_GET_PFN(ld, vkCreateDevice);
     assert(pfn != nullptr);
     auto res = pfn(pdev, &device_info, nullptr, &device);
     assert(res == VK_SUCCESS);
     (void) res;
   }
-  auto old_pfn = VKFL_GET_PFN(ld, CmdDraw);
+  auto old_pfn = VKFL_GET_PFN(ld, vkCmdDraw);
   ld.load(device);
-  auto new_pfn = VKFL_GET_PFN(ld, CmdDraw);
+  auto new_pfn = VKFL_GET_PFN(ld, vkCmdDraw);
   assert(new_pfn != nullptr);
   assert(new_pfn != old_pfn);
   (void) old_pfn;
   (void) new_pfn;
   {
-    auto pfn = VKFL_GET_PFN(ld, DestroyDevice);
+    auto pfn = VKFL_GET_PFN(ld, vkDestroyDevice);
     assert(pfn != nullptr);
     pfn(device, nullptr);
   }
   {
-    auto pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    auto pfn = VKFL_GET_PFN(ld, vkDestroyInstance);
     assert(pfn != nullptr);
     pfn(instance, nullptr);
   }

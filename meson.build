@@ -1,7 +1,8 @@
 project(
   'vkfl',
   [ 'c', 'cpp' ],
-  version: '1.3.0',
+  version: '2.0.0',
+  meson_version: '>=0.62.2',
   license: 'Apache-2.0',
   default_options: [
     'c_std=c18',
@@ -13,6 +14,8 @@ project(
     'b_pie=true'
   ]
 )
+
+python = import('python')
 
 if not (get_option('build_cpp').enabled() and get_option('build_c').enabled())
   warning('Both C and C++ targets are disabled.')
@@ -38,17 +41,27 @@ if extension_arr.length() != 0
 else
   generator_args += '--extensions=""'
 endif
-if get_option('generate_extra_defines')
-  generator_args += '--generate-extra-defines'
+if not get_option('generate_disabled_defines')
+  generator_args += '--no-generate-disbale-defines'
 endif
-# Check for Python3
-find_program('python3')
+# Ensure Python and required modules are fulfilled
+py3 = python.find_installation('python3', modules: [ 'mako', 'defusedxml' ])
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
 doc_deps = [ ]
-vkfl_c_dep = disabler()
 vkfl_cpp_dep = disabler()
+vkfl_cpp_files = [ ]
+vkfl_c_dep = disabler()
+vkfl_c_files = [ ]
 subdir('include')
 subdir('src')
+if get_option('build_cpp').enabled()
+  doc_deps += vkfl_cpp_files
+  vkfl_cpp_dep = declare_dependency(sources: vkfl_cpp_files)
+endif
+if get_option('build_c').enabled()
+  doc_deps += vkfl_c_files
+  vkfl_c_dep = declare_dependency(sources: vkfl_c_files)
+endif
 
 doxygen = find_program('doxygen', required: false, disabler: true)
 vkfl_docs = run_target('documentation', command: [ doxygen, files('Doxyfile') ], depends: doc_deps)

@@ -36,7 +36,7 @@ int main() {
     // Resolve a function pointer.
     // Note that to do anything useful with the resulting function pointer it needs to be cast to the correct type.
     // vkfl.hpp does not introduce these types so you need vulkan.h as well.
-    auto create_instance = reinterpret_cast<PFN_vkCreateInstance>(ld(vkfl::command::CreateInstance));
+    auto create_instance = reinterpret_cast<PFN_vkCreateInstance>(ld(vkfl::command::vkCreateInstance));
     if (!create_instance)
     {
       throw std::runtime_error{ "Failed to load \"vkCreateInstance\"." };
@@ -50,7 +50,7 @@ int main() {
     // Update the loader with instance function pointers.
     ld.load(instance);
     auto enumerate_physical_devices =
-      reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(ld(vkfl::command::EnumeratePhysicalDevices));
+      reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(ld(vkfl::command::vkEnumeratePhysicalDevices));
     if (!enumerate_physical_devices)
     {
       throw std::runtime_error{ "Failed to load \"vkEnumeratePhysicalDevices\"." };
@@ -64,7 +64,7 @@ int main() {
     }
     auto device_info = VkDeviceCreateInfo{ };
     device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    auto create_device = reinterpret_cast<PFN_vkCreateDevice>(ld(vkfl::command::CreateDevice));
+    auto create_device = reinterpret_cast<PFN_vkCreateDevice>(ld(vkfl::command::vkCreateDevice));
     if (!create_device)
     {
       throw std::runtime_error{ "Failed to load \"vkCreateDevice\"." };
@@ -78,7 +78,7 @@ int main() {
     // Update the loader with device function pointers.
     ld.load(device);
     std::cout << "Successfully created Vulkan environment!" << std::endl;
-    auto destroy_device = reinterpret_cast<PFN_vkDestroyDevice>(ld(vkfl::command::DestroyDevice));
+    auto destroy_device = reinterpret_cast<PFN_vkDestroyDevice>(ld(vkfl::command::vkDestroyDevice));
     if (!destroy_device)
     {
       throw std::runtime_error{ "Failed to load \"vkDestroyDevice\"." };
@@ -87,7 +87,7 @@ int main() {
     // After destroying the loaded device you may wish to clear the corresponding function pointers.
     // This will reload the instance function pointers in place of device pointers.
     ld.unload_device();
-    auto destroy_instance = reinterpret_cast<PFN_vkDestroyInstance>(ld(vkfl::command::DestroyInstance));
+    auto destroy_instance = reinterpret_cast<PFN_vkDestroyInstance>(ld(vkfl::command::vkDestroyInstance));
     if (!destroy_instance)
     {
       throw std::runtime_error{ "Failed to load \"vkDestroyInstance\"." };

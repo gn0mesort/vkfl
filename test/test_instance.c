@@ -21,7 +21,7 @@
 
 #include "vkfl.h"
 
-#define VKFL_GET_PFN(ld, cmd) ((PFN_vk##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
+#define VKFL_GET_PFN(ld, cmd) ((PFN_##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
 
 int main() {
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
@@ -44,17 +44,17 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   VkInstance instance;
   {
-    PFN_vkCreateInstance pfn = VKFL_GET_PFN(ld, CreateInstance);
+    PFN_vkCreateInstance pfn = VKFL_GET_PFN(ld, vkCreateInstance);
     assert(pfn != NULL);
     VkResult res = pfn(&instance_info, NULL, &instance);
     assert(res == VK_SUCCESS);
     (void) res;
   }
   assert(vkfl_load_instance(ld, instance) >= 0);
-  assert(VKFL_GET_PFN(ld, GetDeviceProcAddr) != NULL);
-  assert(VKFL_GET_PFN(ld, GetDeviceQueue) != NULL);
+  assert(VKFL_GET_PFN(ld, vkGetDeviceProcAddr) != NULL);
+  assert(VKFL_GET_PFN(ld, vkGetDeviceQueue) != NULL);
   {
-    PFN_vkDestroyInstance pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    PFN_vkDestroyInstance pfn = VKFL_GET_PFN(ld, vkDestroyInstance);
     assert(pfn != NULL);
     pfn(instance, NULL);
   }

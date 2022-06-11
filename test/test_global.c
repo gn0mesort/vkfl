@@ -20,11 +20,11 @@
 
 #include "vkfl.h"
 
-#define VKFL_GET_PFN(ld, cmd) ((PFN_vk##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
+#define VKFL_GET_PFN(ld, cmd) ((PFN_##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
 
 int main() {
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
-  assert(VKFL_GET_PFN(ld, CreateInstance) != NULL);
+  assert(VKFL_GET_PFN(ld, vkCreateInstance) != NULL);
   vkfl_destroy_loader(ld, NULL);
   return 0;
 }

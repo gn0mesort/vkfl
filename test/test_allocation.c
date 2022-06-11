@@ -26,13 +26,13 @@ int main() {
   alloc.deallocator = free;
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, &alloc);
   assert(ld != NULL);
-  assert(vkfl_get(ld, VKFL_COMMAND_EnumerateInstanceExtensionProperties) != NULL);
+  assert(vkfl_get(ld, VKFL_COMMAND_vkEnumerateInstanceExtensionProperties) != NULL);
   struct vkfl_loader* copy_ld = vkfl_copy_loader(ld, &alloc);
   assert(copy_ld != NULL);
-  assert(vkfl_get(copy_ld, VKFL_COMMAND_EnumerateInstanceExtensionProperties) != NULL);
+  assert(vkfl_get(copy_ld, VKFL_COMMAND_vkEnumerateInstanceExtensionProperties) != NULL);
   {
-    PFN_vkVoidFunction a = vkfl_get(ld, VKFL_COMMAND_EnumerateInstanceExtensionProperties);
-    PFN_vkVoidFunction b = vkfl_get(copy_ld, VKFL_COMMAND_EnumerateInstanceExtensionProperties);
+    PFN_vkVoidFunction a = vkfl_get(ld, VKFL_COMMAND_vkEnumerateInstanceExtensionProperties);
+    PFN_vkVoidFunction b = vkfl_get(copy_ld, VKFL_COMMAND_vkEnumerateInstanceExtensionProperties);
     assert(a == b);
   }
   vkfl_destroy_loader(ld, &alloc);

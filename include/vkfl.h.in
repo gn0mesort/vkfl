@@ -21,7 +21,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -101,7 +100,6 @@ enum vkfl_constant {
  * @brief An enumeration of all supported Vulkan commands.
  */
 enum vkfl_command {
-  @c_commands@
   % for command in enabled_global_commands:
   VKFL_COMMAND_${command},
   % endfor

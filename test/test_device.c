@@ -17,12 +17,13 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <vulkan/vulkan.h>
 
 #include "vkfl.h"
 
-#define VKFL_GET_PFN(ld, cmd) ((PFN_vk##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
+#define VKFL_GET_PFN(ld, cmd) ((PFN_##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
 
 int main() {
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
@@ -45,7 +46,7 @@ int main() {
   instance_info.pApplicationInfo = &app_info;
   VkInstance instance;
   {
-    PFN_vkCreateInstance pfn = VKFL_GET_PFN(ld, CreateInstance);
+    PFN_vkCreateInstance pfn = VKFL_GET_PFN(ld, vkCreateInstance);
     assert(pfn != NULL);
     VkResult res = pfn(&instance_info, NULL, &instance);
     assert(res == VK_SUCCESS);
@@ -55,37 +56,64 @@ int main() {
   VkDeviceCreateInfo device_info;
   memset(&device_info, 0, sizeof(VkDeviceCreateInfo));
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  VkPhysicalDevice pdev;
+  VkPhysicalDevice* pdevs = NULL;
+  uint32_t sz = 0;
   {
-    PFN_vkEnumeratePhysicalDevices pfn = VKFL_GET_PFN(ld, EnumeratePhysicalDevices);
+    PFN_vkEnumeratePhysicalDevices pfn = VKFL_GET_PFN(ld, vkEnumeratePhysicalDevices);
     assert(pfn != NULL);
-    uint32_t sz = 1;
-    VkResult res = pfn(instance, &sz, &pdev);
+    VkResult res = pfn(instance, &sz, NULL);
+    assert(res >= 0);
+    (void) res;
+    pdevs = malloc(sz * sizeof(VkPhysicalDevice));
+    assert(pdevs != NULL);
+    res = pfn(instance, &sz, pdevs);
     assert(res >= 0);
     (void) res;
   }
+  // Try to select a discrete device if available.
+  // This is to avoid lavapipe.
+  VkPhysicalDevice pdev = VK_NULL_HANDLE;
+  {
+    PFN_vkGetPhysicalDeviceProperties pfn = VKFL_GET_PFN(ld, vkGetPhysicalDeviceProperties);
+    assert(pfn != NULL);
+    VkPhysicalDeviceProperties properties;
+    for (uint32_t i = 0; i < sz; ++i)
+    {
+      vkGetPhysicalDeviceProperties(pdevs[i], &properties);
+      if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+      {
+        pdev = pdevs[i];
+      }
+    }
+    if (pdev == VK_NULL_HANDLE)
+    {
+      pdev = pdevs[0];
+    }
+    free(pdevs);
+    pdevs = NULL;
+  }
   VkDevice device;
   {
-    PFN_vkCreateDevice pfn = VKFL_GET_PFN(ld, CreateDevice);
+    PFN_vkCreateDevice pfn = VKFL_GET_PFN(ld, vkCreateDevice);
     assert(pfn != NULL);
     VkResult res = pfn(pdev, &device_info, NULL, &device);
     assert(res == VK_SUCCESS);
     (void) res;
   }
-  PFN_vkCmdDraw old_pfn = VKFL_GET_PFN(ld, CmdDraw);
+  PFN_vkCmdDraw old_pfn = VKFL_GET_PFN(ld, vkCmdDraw);
   vkfl_load_device(ld, device);
-  PFN_vkCmdDraw new_pfn = VKFL_GET_PFN(ld, CmdDraw);
+  PFN_vkCmdDraw new_pfn = VKFL_GET_PFN(ld, vkCmdDraw);
   assert(new_pfn != NULL);
   assert(new_pfn != old_pfn);
   (void) old_pfn;
   (void) new_pfn;
   {
-    PFN_vkDestroyDevice pfn = VKFL_GET_PFN(ld, DestroyDevice);
+    PFN_vkDestroyDevice pfn = VKFL_GET_PFN(ld, vkDestroyDevice);
     assert(pfn != NULL);
     pfn(device, NULL);
   }
   {
-    PFN_vkDestroyInstance pfn = VKFL_GET_PFN(ld, DestroyInstance);
+    PFN_vkDestroyInstance pfn = VKFL_GET_PFN(ld, vkDestroyInstance);
     assert(pfn != NULL);
     pfn(instance, NULL);
   }

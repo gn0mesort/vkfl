@@ -45,7 +45,7 @@ int main() {
   // Resolve a function pointer.
   // Note that to do anything useful with the resulting function pointer it needs to be cast to the correct type.
   // vkfl.h does not introduce these types so you need vulkan.h as well.
-  PFN_vkCreateInstance create_instance = (PFN_vkCreateInstance) vkfl_get(ld, VKFL_COMMAND_CreateInstance);
+  PFN_vkCreateInstance create_instance = (PFN_vkCreateInstance) vkfl_get(ld, VKFL_COMMAND_vkCreateInstance);
   if (!create_instance)
   {
     error("Failed to load \"vkCreateInstance\".");
@@ -62,7 +62,7 @@ int main() {
     error("Failed to load Vulkan instance functions.");
   }
   PFN_vkEnumeratePhysicalDevices enumerate_physical_devices =
-    (PFN_vkEnumeratePhysicalDevices) vkfl_get(ld, VKFL_COMMAND_EnumeratePhysicalDevices);
+    (PFN_vkEnumeratePhysicalDevices) vkfl_get(ld, VKFL_COMMAND_vkEnumeratePhysicalDevices);
   if (!enumerate_physical_devices)
   {
     error("Failed to load \"vkEnumeratePhysicalDevices\".");
@@ -77,7 +77,7 @@ int main() {
   VkDeviceCreateInfo device_info;
   memset(&device_info, 0, sizeof(VkDeviceCreateInfo));
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  PFN_vkCreateDevice create_device = (PFN_vkCreateDevice) vkfl_get(ld, VKFL_COMMAND_CreateDevice);
+  PFN_vkCreateDevice create_device = (PFN_vkCreateDevice) vkfl_get(ld, VKFL_COMMAND_vkCreateDevice);
   if (!create_device)
   {
     error("Failed to load \"vkCreateDevice\".");
@@ -94,7 +94,7 @@ int main() {
     error("Failed to load Vulkan device functions.");
   }
   printf("Successfully created Vulkan environment!\n");
-  PFN_vkDestroyDevice destroy_device = (PFN_vkDestroyDevice) vkfl_get(ld, VKFL_COMMAND_DestroyDevice);
+  PFN_vkDestroyDevice destroy_device = (PFN_vkDestroyDevice) vkfl_get(ld, VKFL_COMMAND_vkDestroyDevice);
   if (!destroy_device)
   {
     error("Failed to load \"vkDestroyDevice\".");
@@ -103,7 +103,7 @@ int main() {
   // After destroying the loaded device you may wish to clear the corresponding function pointers.
   // This will reload the instance function pointers in place of device pointers.
   (void) vkfl_unload_device(ld);
-  PFN_vkDestroyInstance destroy_instance = (PFN_vkDestroyInstance) vkfl_get(ld, VKFL_COMMAND_DestroyInstance);
+  PFN_vkDestroyInstance destroy_instance = (PFN_vkDestroyInstance) vkfl_get(ld, VKFL_COMMAND_vkDestroyInstance);
   if (!destroy_instance)
   {
     error("Failed to load \"vkDestroyInstance\".");

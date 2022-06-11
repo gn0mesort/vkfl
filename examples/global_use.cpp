@@ -35,17 +35,17 @@
 
 // Define a macro for retrieving and casting function pointers from the global loader.
 #define VK_GET_PFN(cmd) \
-  reinterpret_cast<PFN_vk##cmd>(g_loader->get(vkfl::command::cmd))
+  reinterpret_cast<PFN_##cmd>(g_loader->get(vkfl::command::cmd))
 
 // Define command function macros. This could be done by a script to generate macros for all enabled functions.
-#define vkGetInstanceProcAddr VK_GET_PFN(GetInstanceProcAddr)
-#define vkEnumerateInstanceVersion VK_GET_PFN(EnumerateInstanceVersion)
-#define vkCreateInstance VK_GET_PFN(CreateInstance)
-#define vkDestroyInstance VK_GET_PFN(DestroyInstance)
-#define vkEnumeratePhysicalDevices VK_GET_PFN(EnumeratePhysicalDevices)
-#define vkGetPhysicalDeviceProperties VK_GET_PFN(GetPhysicalDeviceProperties)
-#define vkCreateDevice VK_GET_PFN(CreateDevice)
-#define vkDestroyDevice VK_GET_PFN(DestroyDevice)
+#define vkGetInstanceProcAddr VK_GET_PFN(vkGetInstanceProcAddr)
+#define vkEnumerateInstanceVersion VK_GET_PFN(vkEnumerateInstanceVersion)
+#define vkCreateInstance VK_GET_PFN(vkCreateInstance)
+#define vkDestroyInstance VK_GET_PFN(vkDestroyInstance)
+#define vkEnumeratePhysicalDevices VK_GET_PFN(vkEnumeratePhysicalDevices)
+#define vkGetPhysicalDeviceProperties VK_GET_PFN(vkGetPhysicalDeviceProperties)
+#define vkCreateDevice VK_GET_PFN(vkCreateDevice)
+#define vkDestroyDevice VK_GET_PFN(vkDestroyDevice)
 
 // Due to using dlopen the vkfl::loader can't be initialized statically (as it requires a valid pointer to
 // vkGetInstanceProcAddr during construction). An alternative to this would be to declare the prototype for
