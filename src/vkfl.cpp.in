@@ -1,7 +1,7 @@
 /**
  * @file vkfl.cpp
  * @author Alexander Rothman <gnomesort@megate.ch>
- * @date December 27, 2021
+ * @date June 10, 2022
  * @copyright Apache-2.0
  * @brief Dynamic Vulkan function pointer loader implementation.
  *
@@ -21,16 +21,25 @@
  */
 #include "vkfl.hpp"
 
-@private_defines@
+#define VKFL_GLOBAL_MAX ${len(enabled_global_commands)}
+#define VKFL_INSTANCE_MAX (VKFL_GLOBAL_MAX + ${len(enabled_instance_commands)})
+#define VKFL_DEVICE_MAX (VKFL_DEVICE_MAX + ${len(enabled_device_commands)})
+#define VKFL_STRING(s) (#s)
+#define V(cmd) (m_pfns[static_cast<std::size_t>(command::cmd)] = context_loader(context, VKFL_STRING(cmd)))
 #define VKFL_LOAD_DEVICE \
-@load_device_macro@
+% for command in enabled_device_commands:
+  V(${command}); \\
+
+% endfor
 
 namespace vkfl {
 
   void loader::load_instance_fns(const VkInstance context) {
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     const auto context_loader = reinterpret_cast<get_instance_proc_addr_fn>(m_pfns[idx]);
-@load_instance@
+% for command in enabled_instance_commands:
+    V(${command});
+% endfor
   }
 
   void loader::load_device_fns(const VkInstance context) {
@@ -52,7 +61,9 @@ namespace vkfl {
     }
     const auto context_loader = global;
     const auto context = nullptr;
-@load_global@
+% for command in enabled_global_commands:
+    V(${command})
+% endfor
     constexpr auto idx = static_cast<std::size_t>(command::GetInstanceProcAddr);
     m_pfns[idx] = reinterpret_cast<any_fn>(global);
   }

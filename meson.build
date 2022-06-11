@@ -46,9 +46,10 @@ find_program('python3')
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]
 doc_deps = [ ]
 vkfl_c_dep = disabler()
-subdir('c')
 vkfl_cpp_dep = disabler()
-subdir('cpp')
+subdir('include')
+subdir('src')
+
 doxygen = find_program('doxygen', required: false, disabler: true)
 vkfl_docs = run_target('documentation', command: [ doxygen, files('Doxyfile') ], depends: doc_deps)
 vulkan_dep = dependency('vulkan',

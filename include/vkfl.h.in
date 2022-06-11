@@ -3,7 +3,7 @@
 /**
  * @file vkfl.h
  * @author Alexander Rothman <gnomesort@megate.ch>
- * @date May, 1 2022
+ * @date June, 10 2022
  * @copyright Apache-2.0
  * @brief Dynamic Vulkan function pointer loader.
  *
@@ -64,7 +64,24 @@ VKFL_DEFINE_HANDLE(VkDevice);
   #define VKFLAPI_PTR VKFLAPI_PTR_PRIV
 #endif
 
-@defines@
+% for api in enabled_apis:
+#define VKFL_API_${api.replace(".", "_")}_ENABLED 1
+% endfor
+% if generate_disabled_defines:
+% for api in disabled_apis:
+#define VKFL_API_${api.replace(".", "_")}_ENABLED 0
+% endfor
+% endif
+% for extension in enabled_extensions:
+#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 1
+% endfor
+% if generate_disabled_defines:
+% for extension in disabled_extensions:
+#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 0
+% endfor
+% endif
+#define VKFL_BUILD_DATE ${f"{buildtime.year}{buildtime.month:02}{buildtime.day:02}"}ULL
+#define VKFL_BUILD_TIME ${f"{buildtime.hour}{buildtime.minute:02}{buildtime.second:02}"}ULL
 
 /**
  * @brief Constants used by vkfl.
@@ -73,11 +90,11 @@ enum vkfl_constant {
   /**
    * @brief The Vulkan header version from which this file was generated.
    */
-  VKFL_HEADER_VERSION = @header_version@,
+  VKFL_HEADER_VERSION = ${spec_version},
   /**
    * @brief The total number of commands in vkfl_command.
    */
-  VKFL_COMMAND_COUNT = @commands_count@
+  VKFL_COMMAND_COUNT = ${len(enabled_global_commands) + len(enabled_instance_commands) + len(enabled_device_commands)}
 };
 
 /**
@@ -85,6 +102,15 @@ enum vkfl_constant {
  */
 enum vkfl_command {
   @c_commands@
+  % for command in enabled_global_commands:
+  VKFL_COMMAND_${command},
+  % endfor
+  % for command in enabled_instance_commands:
+  VKFL_COMMAND_${command},
+  % endfor
+  % for command in enabled_device_commands:
+  VKFL_COMMAND_${command},
+  % endfor
 };
 
 /**

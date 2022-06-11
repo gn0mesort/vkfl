@@ -1,7 +1,7 @@
 /**
  * @file vkfl.c
  * @author Alexander Rothman <gnomesort@megate.ch>
- * @date May, 1 2022
+ * @date June, 10 2022
  * @copyright Apache-2.0
  * @brief Dynamic Vulkan function pointer loader.
  *
@@ -24,9 +24,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-@c_private_defines@
+#define VKFL_GLOBAL_MAX ${len(enabled_global_commands)}
+#define VKFL_INSTANCE_MAX (VKFL_GLOBAL_MAX + ${len(enabled_instance_commands)})
+#define VKFL_DEVICE_MAX (VKFL_DEVICE_MAX + ${len(enabled_device_commands)})
+#define VKFL_STRING(s) (#s)
+#define V(cmd) (dl->pfns[VKFL_COMMAND_##cmd] = context_loader(context, VKFL_STRING(cmd)))
 #define VKFL_LOAD_DEVICE \
-@load_device_macro@
+% for command in enabled_device_commands:
+  V(${command}); \\
+
+% endfor
 
 struct vkfl_loader {
   VkInstance loaded_instance;
@@ -55,7 +62,9 @@ struct vkfl_loader* vkfl_create_loader(const vkfl_get_instance_proc_addr_fn glob
   }
   vkfl_get_instance_proc_addr_fn context_loader = global;
   VkInstance context = NULL;
-@load_global@
+% for command in enabled_global_commands:
+  V(${command});
+% endfor
   dl->pfns[VKFL_COMMAND_GetInstanceProcAddr] = (vkfl_any_fn) global;
   return dl;
 }
@@ -109,7 +118,9 @@ enum vkfl_result vkfl_load_instance(struct vkfl_loader *const dl, const VkInstan
   }
   vkfl_get_instance_proc_addr_fn context_loader =
     (vkfl_get_instance_proc_addr_fn) dl->pfns[VKFL_COMMAND_GetInstanceProcAddr];
-@load_instance@
+% for command in enabled_instance_commands:
+  V(${command});
+% endfor
   VKFL_LOAD_DEVICE
   dl->loaded_instance = context;
   dl->loaded_device = NULL;

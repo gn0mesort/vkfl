@@ -3,11 +3,11 @@
 /**
  * @file vkfl.hpp
  * @author Alexander Rothman <gnomesort@megate.ch>
- * @date December 27, 2021
+ * @date June 10, 2022
  * @copyright Apache-2.0
  * @brief Dynamic Vulkan function pointer loader.
  *
- * Copyright 2021 Alexander Rothman
+ * Copyright 2022 Alexander Rothman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,24 @@ VKFL_DEFINE_HANDLE(VkDevice);
   #define VKFLAPI_PTR VKFLAPI_PTR_PRIV
 #endif
 
-@defines@
+% for api in enabled_apis:
+#define VKFL_API_${api.replace(".", "_")}_ENABLED 1
+% endfor
+% if generate_disabled_defines:
+% for api in disabled_apis:
+#define VKFL_API_${api.replace(".", "_")}_ENABLED 0
+% endfor
+% endif
+% for extension in enabled_extensions:
+#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 1
+% endfor
+% if generate_disabled_defines:
+% for extension in disabled_extensions:
+#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 0
+% endfor
+% endif
+#define VKFL_BUILD_DATE ${f"{buildtime.year}{buildtime.month:02}{buildtime.day:02}"}ULL
+#define VKFL_BUILD_TIME ${f"{buildtime.hour}{buildtime.minute:02}{buildtime.second:02}"}ULL
 
 namespace vkfl {
 
@@ -70,14 +87,22 @@ namespace vkfl {
    */
   class error final : std::runtime_error {
   public:
-using std::runtime_error::runtime_error;
+    using std::runtime_error::runtime_error;
   };
 
   /**
    * @brief An enumeration of all supported Vulkan command names.
    */
   enum class command {
-    @commands@
+    % for command in enabled_global_commands:
+    ${command},
+    % endfor
+    % for command in enabled_instance_commands:
+    ${command},
+    % endfor
+    % for command in enabled_device_commands:
+    ${command},
+    % endfor
   };
 
   /**
@@ -104,7 +129,7 @@ using std::runtime_error::runtime_error;
     // Since only two handles are defined and they're both dispatchable this should be ok in any case.
     VkInstance m_loaded_instance{ nullptr };
     VkDevice m_loaded_device{ nullptr };
-    std::array<any_fn, @commands_count@> m_pfns{ };
+    std::array<any_fn, ${len(enabled_global_commands) + len(enabled_instance_commands) + len(enabled_device_commands)}> m_pfns{ };
 
     void load_instance_fns(const VkInstance context);
     void load_device_fns(const VkInstance context);
@@ -115,7 +140,7 @@ using std::runtime_error::runtime_error;
      * @returns an integer representing the header version (e.g. 203).
      */
     static constexpr std::uint32_t header_version() {
-      return @header_version@;
+      return ${spec_version};
     }
 
     /**
