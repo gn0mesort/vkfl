@@ -17,7 +17,7 @@ project(
 
 python = import('python')
 
-if not (get_option('build_cpp').enabled() and get_option('build_c').enabled())
+if not (get_option('build_cpp').enabled() or get_option('build_c').enabled())
   warning('Both C and C++ targets are disabled.')
 endif
 
