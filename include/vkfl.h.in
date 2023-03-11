@@ -72,11 +72,11 @@ VKFL_DEFINE_HANDLE(VkDevice);
 % endfor
 % endif
 % for extension in enabled_extensions:
-#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 1
+#define ${extension.replace("VK", "VKFL", 1).upper()}_ENABLED 1
 % endfor
 % if generate_disabled_defines:
 % for extension in disabled_extensions:
-#define ${extension.replace("VK", "VKFL").upper()}_ENABLED 0
+#define ${extension.replace("VK", "VKFL", 1).upper()}_ENABLED 0
 % endfor
 % endif
 #define VKFL_BUILD_DATE ${f"{buildtime.year}{buildtime.month:02}{buildtime.day:02}"}ULL
