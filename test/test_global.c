@@ -22,7 +22,7 @@
 
 #define VKFL_GET_PFN(ld, cmd) ((PFN_##cmd) vkfl_get(ld, VKFL_COMMAND_##cmd))
 
-int main() {
+int main(void) {
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
   assert(VKFL_GET_PFN(ld, vkCreateInstance) != NULL);
   vkfl_destroy_loader(ld, NULL);

@@ -20,7 +20,7 @@
 
 #include "vkfl.h"
 
-int main() {
+int main(void) {
   struct vkfl_allocation_callbacks alloc;
   alloc.allocator = malloc;
   alloc.deallocator = free;

@@ -27,11 +27,11 @@ int main() {
   auto ld = vkfl::loader{ vkGetInstanceProcAddr };
   auto app_info = VkApplicationInfo{ };
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-#if VKFL_API_1_3_ENABLED
+#if VKFL_API_VK_VERSION_1_3_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_3;
-#elif VKFL_API_1_2_ENABLED
+#elif VKFL_API_VK_VERSION_1_2_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_2;
-#elif VKFL_API_1_1_ENABLED
+#elif VKFL_API_VK_VERSION_1_1_ENABLED
   app_info.apiVersion = VK_API_VERSION_1_1;
 #else
   app_info.apiVersion = VK_API_VERSION_1_0;
