@@ -83,12 +83,14 @@ class VulkanFeature:
         if node.tag == "feature":
             self._version = VulkanVersion(node.get("number"))
             self._name = node.get("name")
-            self._apis = set()
+            self._supported_apis = set()
             for api in node.get("api").split(","):
-                self._apis.add(api)
+                self._supported_apis.add(api)
         else:
             self._name = node.get("name")
-            self._apis = set("extension")
+            self._supported_apis = set()
+            for api in node.get("supported").split(","):
+                self._supported_apis.add(api)
             version_node = node.find(f"require/enum[@name='{self._name.upper()}_SPEC_VERSION']")
             # This is inexplicable to me. Originally, I tried if version_node but that doesn't seem to work.
             if version_node is not None and version_node.get("value") is not None:
@@ -99,6 +101,9 @@ class VulkanFeature:
         self._commands = set()
         for command in node.findall("require/command"):
             self._commands.add(command.get("name"))
+        self._removals = set()
+        for command in node.findall("remove/command"):
+            self._removals.add(command.get("name"))
 
     def node(self):
         return self._node
@@ -106,8 +111,8 @@ class VulkanFeature:
     def name(self) -> str:
         return self._name
 
-    def apis(self) -> set[str]:
-        return self._apis
+    def supported_apis(self) -> set[str]:
+        return self._supported_apis
 
     def version(self) -> VulkanVersion:
         return self._version
@@ -123,6 +128,9 @@ class VulkanFeature:
 
     def commands(self) -> set[str]:
         return self._commands
+
+    def removals(self) -> set[str]:
+        return self._removals
 
 def _find_spec(search_paths: list[Path]) -> Path:
     for search_path in search_paths:

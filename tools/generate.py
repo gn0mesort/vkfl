@@ -47,8 +47,11 @@ parser.add_argument("--spec", type=Path, help="A file path to an XML specificati
 parser.add_argument("--extensions", type=comma_separated, default=["all"],
                     help="A comma separated list of Vulkan extensions to include in the loader. " +
                          "This may also be the special value \"all\". Defaults to \"all\".")
-parser.add_argument("--api", default="latest",
-                    help="The latest Vulkan API version to include in the loader (i.e., 1.0, 1.1, 1.2, etc.). " +
+parser.add_argument("--api", default="vulkan",
+                    help="The Vulkan API to include in the loader (e.g., \"vulkan\", \"vulkansc\"). Defaults to " +
+                         "\"vulkan\".")
+parser.add_argument("--api-version", default="latest",
+                    help="The latest Vulkan API version to include in the loader (e.g., 1.0, 1.1, 1.2, etc.). " +
                          "This may also be the special value \"latest\". Defaults to \"latest\".")
 parser.add_argument("--no-generate-disabled-defines", const=False, action="store_const", default=True,
                     help="Disable the generation of symbols indicating that an extension or API version is disabled" +
@@ -57,26 +60,33 @@ parser.add_argument("INPUT", type=Path, help="A path to an input template file."
 parser.add_argument("OUTPUT", type=Path, help="A path to an output file.")
 args = parser.parse_args()
 (apis, extensions, commands, spec_version) = parse_vulkan_spec(args.spec)
-enabled_extensions = None
+enabled_extensions = { }
 disabled_extensions = { }
 if "all" in args.extensions:
-    enabled_extensions = extensions
-else:
-    enabled_extensions = { }
     for extension in extensions:
-        if extension in args.extensions:
+        if args.api in extensions[extension].supported_apis():
             enabled_extensions[extension] = extensions[extension]
         else:
             disabled_extensions[extension] = extensions[extension]
-enabled_apis = None
-disabled_apis = { }
-if args.api == "latest":
-    enabled_apis = apis
 else:
-    enabled_apis = { }
-    desired = VulkanVersion(args.api)
+    enabled_extensions = { }
+    for extension in extensions:
+        if (extension in args.extensions) and (args.api in extensions[extension].supported_apis()):
+            enabled_extensions[extension] = extensions[extension]
+        else:
+            disabled_extensions[extension] = extensions[extension]
+enabled_apis = { }
+disabled_apis = { }
+if args.api_version == "latest":
     for api in apis:
-        if apis[api].version() <= desired:
+        if args.api in apis[api].supported_apis():
+            enabled_apis[api] = apis[api]
+        else:
+            disabled_apis[api] = apis[api]
+else:
+    desired = VulkanVersion(args.api_version)
+    for api in apis:
+        if (apis[api].version() <= desired) and (args.api in apis[api].supported_apis()):
             enabled_apis[api] = apis[api]
         else:
             disabled_apis[api] = apis[api]
@@ -92,6 +102,14 @@ for api in enabled_apis:
             enabled_instance_commands.add(command)
         elif command_type == VulkanCommandType.DEVICE:
             enabled_device_commands.add(command)
+    for command in enabled_apis[api].removals():
+        command_type = commands[command].type()
+        if (command_type == VulkanCommandType.GLOBAL):
+            enabled_global_commands.discard(command)
+        elif (command_type == VulkanCommandType.INSTANCE):
+            enabled_instance_commands.discard(command)
+        elif command_type == VulkanCommandType.DEVICE:
+            enabled_device_commands.discard(command)
 for extension in enabled_extensions:
     for command in enabled_extensions[extension].commands():
         command_type = commands[command].type()

@@ -1,4 +1,5 @@
-option('api', type: 'string', value: 'latest', description: 'The Vulkan API version to generate.')
+option('api', type: 'combo', value: 'vulkan', choices: [ 'vulkan', 'vulkansc' ], description: 'The Vulkan API to generate')
+option('api_version', type: 'string', value: 'latest', description: 'The Vulkan API version to generate.')
 option('extensions', type: 'array', value: [ 'all' ], description: 'A set of Vulkan extensions to include.')
 option('specification', type: 'string', value: 'default',
        description: 'A path indicating the location of the desired Vulkan specification. This may also be the special value "default" which selects the default specification.')

@@ -26,8 +26,11 @@ if get_option('specification') != 'default'
   spec_file = files(get_option('specification'))[0]
   generator_args += '--spec=@0@'.format(spec_file)
 endif
-if get_option('api') != 'latest'
+if get_option('api') != 'vulkan'
   generator_args += '--api=@0@'.format(get_option('api'))
+endif
+if get_option('api_version') != 'latest'
+  generator_args += '--api-version=@0@'.format(get_option('api_version'))
 endif
 extension_arr = get_option('extensions')
 if extension_arr.length() != 0
