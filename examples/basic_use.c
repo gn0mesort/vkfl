@@ -27,7 +27,7 @@ void error(const char *const message) {
   exit(1);
 }
 
-int main() {
+int main(void) {
   // Create a loader and load global function pointers.
   struct vkfl_loader* ld = vkfl_create_loader(vkGetInstanceProcAddr, NULL);
   if (!ld)

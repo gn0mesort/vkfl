@@ -87,7 +87,7 @@ int main() {
 
     // Retrieve instance version
     auto instance_version = std::uint32_t{ 0 };
-#if VKFL_API_1_1_ENABLED
+#if VKFL_API_VK_VERSION_1_1_ENABLED
     if (auto res = vkEnumerateInstanceVersion(&instance_version); res != VK_SUCCESS)
     {
       throw std::runtime_error{ "Failed to retrieve Vulkan instance version." };

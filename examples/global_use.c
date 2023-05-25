@@ -77,12 +77,12 @@ void vulkan_load_device(const VkDevice device) {
   }
 }
 
-void vulkan_destroy_loader() {
+void vulkan_destroy_loader(void) {
   vkfl_destroy_loader(g_loader, NULL);
 }
 
 
-int main() {
+int main(void) {
   // Load libvulkan and retrieve a pointer to vkGetInstanceProcAddr.
   void* libvulkan = dlopen("libvulkan.so.1", RTLD_LAZY | RTLD_LOCAL);
   if (!libvulkan)
@@ -103,7 +103,7 @@ int main() {
   // Retrieve instance version
   uint32_t instance_version = 0;
   VkResult res;
-#if VKFL_API_1_1_ENABLED
+#if VKFL_API_VK_VERSION_1_1_ENABLED
   if ((res = vkEnumerateInstanceVersion(&instance_version)) != VK_SUCCESS)
   {
     error("Failed to retrieve Vulkan instance version.");

@@ -82,15 +82,18 @@ class VulkanFeature:
         self._node = node
         if node.tag == "feature":
             self._version = VulkanVersion(node.get("number"))
-            self._name = node.get("number")
+            self._name = node.get("name")
+            self._apis = set()
+            for api in node.get("api").split(","):
+                self._apis.add(api)
         else:
             self._name = node.get("name")
+            self._apis = set("extension")
             version_node = node.find(f"require/enum[@name='{self._name.upper()}_SPEC_VERSION']")
             # This is inexplicable to me. Originally, I tried if version_node but that doesn't seem to work.
             if version_node is not None and version_node.get("value") is not None:
                 self._version = VulkanVersion(version_node.get("value"))
             else:
-                # print(f"Bad extension: {self._name}")
                 self._version = VulkanVersion("0.0")
         self._enabled = False
         self._commands = set()
@@ -102,6 +105,9 @@ class VulkanFeature:
 
     def name(self) -> str:
         return self._name
+
+    def apis(self) -> set[str]:
+        return self._apis
 
     def version(self) -> VulkanVersion:
         return self._version
