@@ -7,7 +7,7 @@ While there are plenty of other ways to achieve this I prefer VKFL because:
 - VKFL doesn't introduce any global state and namespaces all symbols.
 - VKFL doesn't depend directly on libvulkan or the Vulkan headers.
 - VKFL doesn't require any special compile time configuration of Vulkan.
-- VKFL's generator can generate relatively small files (~55KiB for the header and ~25KiB for the source file) compared to other similar tools.
+- VKFL's generator can generate relatively small files compared to other similar tools.
 - VKFL's generator can generate files for specific API versions and extensions (e.g. Vulkan 1.3 with only `VK_KHR_surface`, `VK_KHR_xcb_surface`, and `VK_KHR_swapchain`).
 - VKFL is easy to use as a [Meson](https://mesonbuild.com) subproject.
 
@@ -77,7 +77,7 @@ VKFL's generator can be found in [`tools/generate.py`](https://github.com/gn0mes
 The usage is as follows:
 
 ```
-usage: generate.py [-h] [--spec SPEC] [--extensions EXTENSIONS] [--api API] [--no-generate-disabled-defines] INPUT OUTPUT
+usage: generate.py [-h] [--spec SPEC] [--extensions EXTENSIONS] [--api API] [--api-version API_VERSION] [--no-enable-deprecated-features] [--no-generate-disabled-defines] INPUT OUTPUT
 
 positional arguments:
   INPUT                 A path to an input template file.
@@ -88,7 +88,11 @@ options:
   --spec SPEC           A file path to an XML specification of the Vulkan API. If this isn't provided, the script will default to searching a set of standard paths for vk.xml.
   --extensions EXTENSIONS
                         A comma separated list of Vulkan extensions to include in the loader. This may also be the special value "all". Defaults to "all".
-  --api API             The latest Vulkan API version to include in the loader (i.e., 1.0, 1.1, 1.2, etc.). This may also be the special value "latest". Defaults to "latest".
+  --api API             The Vulkan API to include in the loader (e.g., "vulkan", "vulkansc"). Defaults to "vulkan".
+  --api-version API_VERSION
+                        The latest Vulkan API version to include in the loader (e.g., 1.0, 1.1, 1.2, etc.). This may also be the special value "latest". Defaults to "latest".
+  --no-enable-deprecated-features
+                        Disable the generation of deprecated features (i.e., extensions). Deprecated features are marked as disabled.
   --no-generate-disabled-defines
                         Disable the generation of symbols indicating that an extension or API version is disabled (i.e., don't generate VKFL_X_ENABLED if it would be defined as 0).
 
