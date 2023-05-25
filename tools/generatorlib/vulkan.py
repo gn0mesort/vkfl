@@ -80,6 +80,7 @@ class VulkanCommand:
 class VulkanFeature:
     def __init__(self, node):
         self._node = node
+        self._deprecated = node.get("deprecatedby")
         if node.tag == "feature":
             self._version = VulkanVersion(node.get("number"))
             self._name = node.get("name")
@@ -131,6 +132,9 @@ class VulkanFeature:
 
     def removals(self) -> set[str]:
         return self._removals
+
+    def deprecated(self) -> bool:
+        return bool(self._deprecated)
 
 def _find_spec(search_paths: list[Path]) -> Path:
     for search_path in search_paths:

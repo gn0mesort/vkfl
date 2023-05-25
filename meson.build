@@ -47,6 +47,9 @@ endif
 if not get_option('generate_disabled_defines')
   generator_args += '--no-generate-disbale-defines'
 endif
+if not get_option('enable_deprecated_features')
+  generator_args += '--no-enable-deprecated-features'
+endif
 # Ensure Python and required modules are fulfilled
 py3 = python.find_installation('python3', modules: [ 'mako', 'defusedxml' ])
 generator_command = [ find_program('tools/generate.py'), generator_args, '@INPUT@', '@OUTPUT@' ]

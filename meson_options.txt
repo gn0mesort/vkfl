@@ -8,3 +8,4 @@ option('build_c', type: 'feature', value: 'enabled', description: 'Whether or no
 option('build_tests', type: 'feature', value: 'disabled', description: 'Whether or not to build tests')
 option('build_examples', type: 'feature', value: 'disabled', description: 'Whether or not to build example programs')
 option('generate_disabled_defines', type: 'boolean', value: true, description: 'Whether or not to generate symbol definitions for disabled extensions or APIs in vkfl.hpp and vkfl.h')
+option('enable_deprecated_features', type: 'boolean', value: true, description: 'Whether or not to enable deprecated features in vkfl.hpp and vkfl.h')

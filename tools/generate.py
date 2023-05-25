@@ -29,6 +29,9 @@ def comma_separated(s: str):
             res.add(value.replace('\"', '').replace('\'', ''))
     return res
 
+def has_extension(e: str, l: list[str]) -> bool:
+    return True if ("all" in l) or (e in l) else False
+
 epilog = """
 If a specification path is not explicitly provided, the following locations are searched.
 Unix-like systems:
@@ -53,6 +56,9 @@ parser.add_argument("--api", default="vulkan",
 parser.add_argument("--api-version", default="latest",
                     help="The latest Vulkan API version to include in the loader (e.g., 1.0, 1.1, 1.2, etc.). " +
                          "This may also be the special value \"latest\". Defaults to \"latest\".")
+parser.add_argument("--no-enable-deprecated-features", const=False, action="store_const", default=True,
+                    help="Disable the generation of deprecated features (i.e., extensions). Deprecated features are" +
+                    " marked as disabled.")
 parser.add_argument("--no-generate-disabled-defines", const=False, action="store_const", default=True,
                     help="Disable the generation of symbols indicating that an extension or API version is disabled" +
                          " (i.e., don't generate VKFL_X_ENABLED if it would be defined as 0).")
@@ -62,19 +68,12 @@ args = parser.parse_args()
 (apis, extensions, commands, spec_version) = parse_vulkan_spec(args.spec)
 enabled_extensions = { }
 disabled_extensions = { }
-if "all" in args.extensions:
-    for extension in extensions:
-        if args.api in extensions[extension].supported_apis():
-            enabled_extensions[extension] = extensions[extension]
-        else:
-            disabled_extensions[extension] = extensions[extension]
-else:
-    enabled_extensions = { }
-    for extension in extensions:
-        if (extension in args.extensions) and (args.api in extensions[extension].supported_apis()):
-            enabled_extensions[extension] = extensions[extension]
-        else:
-            disabled_extensions[extension] = extensions[extension]
+for extension in extensions:
+    possible = extensions[extension]
+    if has_extension(extension, args.extensions) and (args.api in possible.supported_apis()) and (not possible.deprecated()):
+        enabled_extensions[extension] = possible
+    else:
+        disabled_extensions[extension] = possible
 enabled_apis = { }
 disabled_apis = { }
 if args.api_version == "latest":
