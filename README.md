@@ -8,7 +8,7 @@ While there are plenty of other ways to achieve this I prefer VKFL because:
 - VKFL doesn't depend directly on libvulkan or the Vulkan headers.
 - VKFL doesn't require any special compile time configuration of Vulkan.
 - VKFL's generator can generate relatively small files compared to other similar tools.
-- VKFL's generator can generate files for specific API versions and extensions (e.g. Vulkan 1.3 with only `VK_KHR_surface`, `VK_KHR_xcb_surface`, and `VK_KHR_swapchain`).
+- VKFL's generator can generate files for specific API versions and extensions (e.g., Vulkan 1.3 with only `VK_KHR_surface`, `VK_KHR_xcb_surface`, and `VK_KHR_swapchain`).
 - VKFL is easy to use as a [Meson](https://mesonbuild.com) subproject.
 
 ## Setup
@@ -46,12 +46,12 @@ VKFL can also be used by generating `vkfl.hpp` and `vkfl.cpp` directly to do thi
 follows:
 
 ```sh
-meson build
-ninja -C build
+meson setup build
+meson compile -C build
 ```
 
-Then copy the resulting files (`build/vkfl.hpp` and `build/vkfl.cpp` for C++ or `build/vkfl.h` and
-`build/vkfl.c` for C) into your project.
+Then copy the resulting files (`build/include/vkfl.hpp` and `build/src/vkfl.cpp` for C++ or `build/include/vkfl.h` and
+`build/src/vkfl.c` for C) into your project.
 
 Finally, you can use the generator script manually. To do this run `tools/generate.py` as follows:
 
@@ -146,7 +146,7 @@ compile (i.e., they won't compile on Windows).
 HTML documentation requires [Doxygen](https://www.doxygen.nl/) and can be built with the following:
 
 ```sh
-ninja -C build documentation
+meson compile -C build documentation
 ```
 
 ## Acknowledgments
